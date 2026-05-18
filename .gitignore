@@ -1,0 +1,17 @@
+node_modules/
+.env
+.env.*
+!.env.example
+.svelte-kit/
+dist/
+build/
+.wrangler/
+.dev.vars
+*.local
+
+# Worktrees
+.worktrees/
+.claude/worktrees/
+
+# Docs (plans and specs stay in conversation per CLAUDE.md)
+docs/
