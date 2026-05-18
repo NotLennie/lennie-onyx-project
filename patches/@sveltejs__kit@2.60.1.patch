@@ -1,0 +1,13 @@
+diff --git a/src/exports/vite/index.js b/src/exports/vite/index.js
+index fe829e73e240d283f9f7557ffc60ebfe6973b1b6..eac929331e439a43348b18589bb49d02f3b9dce0 100644
+--- a/src/exports/vite/index.js
++++ b/src/exports/vite/index.js
+@@ -667,7 +667,7 @@ async function kit({ svelte_config }) {
+ 					}
+ 				}
+ 
+-				throw new Error('An impossible situation occurred');
++				return null; // dynamic import not in import_map (Vite 6 compat)
+ 			}
+ 		}
+ 	};
