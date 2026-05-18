@@ -1,4 +1,4 @@
-import type { LoginInput, SignupInput } from '@project/shared';
+import type { LoginInput, SignupInput, Service } from '@project/shared';
 
 const BASE = import.meta.env.PUBLIC_API_URL ?? 'http://localhost:8787';
 
@@ -39,5 +39,9 @@ export const api = {
       request<{ ok: boolean }>('/api/auth/logout', { method: 'POST' }),
     me: () =>
       request<{ user: SessionUser }>('/api/auth/me'),
+  },
+  public: {
+    services: () =>
+      request<{ services: Service[] }>('/api/public/services'),
   },
 };
