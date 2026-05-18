@@ -10,8 +10,9 @@ build/
 *.local
 
 # Worktrees
+.worktrees
 .worktrees/
-.claude/worktrees/
+.claude/worktrees
 
 # Docs (plans and specs stay in conversation per CLAUDE.md)
 docs/
