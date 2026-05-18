@@ -6,6 +6,7 @@ export type Env = {
     DATABASE_URL: string;
     USER_SESSIONS: DurableObjectNamespace;
     ALLOWED_ORIGIN?: string;
+    PROFILE_PICTURES: R2Bucket;
   };
   Variables: {
     db: DrizzleDB;
