@@ -10,9 +10,9 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
 }
 
 export function generateSessionToken(): string {
-  const bytes = new Uint8Array(24);
+  const bytes = new Uint8Array(16);
   crypto.getRandomValues(bytes);
-  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('').slice(0, 32);
+  return Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
 }
 
 export async function hashToken(token: string): Promise<string> {
