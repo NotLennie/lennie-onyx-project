@@ -4,6 +4,7 @@ import type { Env } from './types';
 import { createDbClient } from './db/client';
 import { UserSessions } from './auth/sessions';
 import { authRoutes } from './routes/auth';
+import { publicRoutes } from './routes/public';
 
 const app = new Hono<Env>();
 
@@ -23,6 +24,7 @@ app.use('*', async (c, next) => {
 });
 
 app.route('/api/auth', authRoutes);
+app.route('/api/public', publicRoutes);
 
 export default app;
 export { UserSessions };
