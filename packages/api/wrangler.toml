@@ -1,0 +1,15 @@
+name = "hair-salon-api"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+compatibility_flags = ["nodejs_compat"]
+
+[[durable_objects.bindings]]
+name = "USER_SESSIONS"
+class_name = "UserSessions"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["UserSessions"]
+
+[vars]
+# Set DATABASE_URL via: wrangler secret put DATABASE_URL
