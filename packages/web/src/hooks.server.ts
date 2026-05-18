@@ -1,8 +1,7 @@
 import type { Handle } from '@sveltejs/kit';
 
-const API_BASE = process.env.API_URL ?? 'http://localhost:8787';
-
 export const handle: Handle = async ({ event, resolve }) => {
+  const API_BASE = event.platform?.env?.API_URL ?? 'http://localhost:8787';
   const cookie = event.cookies.get('session');
 
   if (cookie) {
