@@ -88,6 +88,7 @@ export class AuthService {
   async logout(token: string): Promise<void> {
     try {
       const dotIndex = token.indexOf('.');
+      if (dotIndex === -1) return;
       const userId = token.slice(0, dotIndex);
       const randomToken = token.slice(dotIndex + 1);
       const tokenHash = await hashToken(randomToken);
