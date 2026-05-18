@@ -13,7 +13,7 @@
   "dependencies": {
     "@project/shared": "workspace:*",
     "@sveltejs/adapter-cloudflare": "^4.8.0",
-    "@sveltejs/kit": "^2.14.0",
+    "@sveltejs/kit": "^2.60.1",
     "bits-ui": "^1.0.0",
     "clsx": "^2.1.1",
     "svelte": "^5.14.0",

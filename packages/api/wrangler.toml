@@ -1,4 +1,5 @@
 name = "hair-salon-api"
+account_id = "c4c2cb486a0e2a68e92d046047fc9997"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]

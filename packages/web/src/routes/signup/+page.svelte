@@ -3,12 +3,12 @@
   let { form } = $props<{ form: ActionData }>();
 </script>
 
-<svelte:head><title>Sign Up — Luxe Hair Salon</title></svelte:head>
+<svelte:head><title>Sign Up — Onyx Hair Salon</title></svelte:head>
 
 <div class="min-h-screen flex items-center justify-center" style="background: var(--color-bg)">
   <div class="w-full max-w-md p-8 rounded-lg" style="background: var(--color-surface); border: 1px solid var(--color-border)">
     <h1 class="text-2xl font-serif font-bold text-white mb-2">Create Account</h1>
-    <p class="text-sm mb-6" style="color: var(--color-gold)">Luxe Hair Salon</p>
+    <p class="text-sm mb-6" style="color: var(--color-gold)">Onyx Hair Salon</p>
 
     {#if form?.error}
       <p class="mb-4 text-red-400 text-sm">{form.error}</p>
