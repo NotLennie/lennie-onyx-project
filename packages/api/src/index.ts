@@ -8,7 +8,7 @@ import { authRoutes } from './routes/auth';
 const app = new Hono<Env>();
 
 app.use('*', async (c, next) => {
-  const allowedOrigin = (c.env as any).ALLOWED_ORIGIN ?? 'http://localhost:5173';
+  const allowedOrigin = c.env.ALLOWED_ORIGIN ?? 'http://localhost:5173';
   return cors({
     origin: allowedOrigin,
     allowHeaders: ['Content-Type', 'Cookie'],
