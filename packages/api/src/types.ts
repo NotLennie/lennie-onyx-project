@@ -5,6 +5,7 @@ export type Env = {
   Bindings: {
     DATABASE_URL: string;
     USER_SESSIONS: DurableObjectNamespace;
+    ALLOWED_ORIGIN?: string;
   };
   Variables: {
     db: DrizzleDB;

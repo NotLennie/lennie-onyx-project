@@ -9,6 +9,7 @@ declare global {
         email: string;
         profilePictureUrl: string | null;
         role: 'client' | 'employee' | 'admin';
+        isAdmin?: boolean;
       } | null;
     }
     interface Platform {
