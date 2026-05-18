@@ -28,7 +28,10 @@ export const updateEmployeeSchema = z.object({
   email: z.string().email().optional(),
   currentPassword: z.string().optional(),
   newPassword: z.string().min(8).optional(),
-});
+}).refine(
+  (d) => !(d.newPassword && !d.currentPassword),
+  { message: 'currentPassword is required when setting a new password', path: ['currentPassword'] }
+);
 
 export type Role = z.infer<typeof roleSchema>;
 export type Employee = z.infer<typeof employeeSchema>;
