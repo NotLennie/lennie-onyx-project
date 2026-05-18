@@ -1,0 +1,30 @@
+{
+  "name": "api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy --minify",
+    "test": "vitest run",
+    "check": "tsc --noEmit",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate"
+  },
+  "dependencies": {
+    "hono": "^4.6.0",
+    "@hono/zod-validator": "^0.4.0",
+    "drizzle-orm": "^0.36.0",
+    "postgres": "^3.4.5",
+    "zod": "^3.24.0",
+    "bcryptjs": "^2.4.3",
+    "@project/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "wrangler": "^3.99.0",
+    "@cloudflare/workers-types": "^4.20241230.0",
+    "@types/bcryptjs": "^2.4.6",
+    "drizzle-kit": "^0.28.0",
+    "vitest": "^2.1.0",
+    "typescript": "^5.7.0"
+  }
+}
