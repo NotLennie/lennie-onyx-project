@@ -14,3 +14,7 @@ new_classes = ["UserSessions"]
 
 [vars]
 # Set DATABASE_URL via: wrangler secret put DATABASE_URL
+
+[[r2_buckets]]
+binding = "PROFILE_PICTURES"
+bucket_name = "onyx-profile-pictures"
