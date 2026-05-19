@@ -1,12 +1,13 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { api } from '$lib/api';
-  import { invalidateAll } from '$app/navigation';
+  import { goto, invalidateAll } from '$app/navigation';
 
   let { data } = $props<{ data: PageData }>();
 
   let completing = $state<string | null>(null);
   let error = $state('');
+  let selectedDate = $state(data.date);
 
   async function complete(appointmentId: string) {
     completing = appointmentId;
@@ -21,6 +22,10 @@
     }
   }
 
+  function changeDate() {
+    goto(`/employee/appointments?date=${selectedDate}`, { invalidateAll: true });
+  }
+
   function statusStyle(status: string) {
     if (status === 'confirmed') return 'background-color: rgba(201,168,76,0.15); color: var(--color-gold)';
     if (status === 'completed') return 'background-color: rgba(34,197,94,0.15); color: #22c55e';
@@ -29,10 +34,20 @@
 </script>
 
 <div class="max-w-3xl">
-  <h1 class="text-3xl font-bold text-white mb-1">Welcome back, {data.user.name}</h1>
-  <p class="text-gray-400 mb-8">
-    Today's schedule — {new Date(data.today + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-  </p>
+  <h1 class="text-3xl font-bold text-white mb-6">Appointments</h1>
+
+  <div class="flex items-center gap-3 mb-6">
+    <input
+      type="date"
+      bind:value={selectedDate}
+      onchange={changeDate}
+      class="px-3 py-2 rounded-lg text-white text-sm"
+      style="background-color: var(--color-surface); border: 1px solid var(--color-border)"
+    />
+    <span class="text-gray-400 text-sm">
+      {new Date(data.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+    </span>
+  </div>
 
   {#if error}
     <div class="mb-4 p-3 rounded-lg text-sm" style="background-color: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3)">
@@ -42,7 +57,7 @@
 
   {#if data.appointments.length === 0}
     <div class="rounded-xl p-12 text-center" style="background-color: var(--color-surface); border: 1px solid var(--color-border)">
-      <p class="text-gray-400">No appointments scheduled for today.</p>
+      <p class="text-gray-400">No appointments on this date.</p>
     </div>
   {:else}
     <div class="space-y-3">
