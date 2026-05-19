@@ -1,3 +1,6 @@
+<script lang="ts">
+</script>
+
 <footer
   id="contact"
   class="pt-16 pb-8 px-8"
