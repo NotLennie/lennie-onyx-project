@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
+  import { onMount } from 'svelte';
   import type { Service } from '@project/shared';
 
   let { services }: { services: Service[] } = $props();
@@ -75,8 +75,10 @@
     startAuto();
   }
 
-  startAuto();
-  onDestroy(stopAuto);
+  onMount(() => {
+    startAuto();
+    return stopAuto;
+  });
 </script>
 
 <div
