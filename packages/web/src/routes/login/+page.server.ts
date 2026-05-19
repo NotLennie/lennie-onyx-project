@@ -3,7 +3,7 @@ import type { Actions } from './$types';
 
 export const actions: Actions = {
   default: async ({ request, cookies, platform }) => {
-    const API_BASE = platform?.env?.API_URL ?? 'http://localhost:8787';
+    const API_BASE = platform?.env?.PUBLIC_API_URL ?? 'http://localhost:8787';
 
     const form = await request.formData();
     const email = form.get('email') as string;

@@ -5,7 +5,7 @@ import type { Service, Role } from '@project/shared';
 export const load: PageServerLoad = async ({ fetch, platform, locals }) => {
   if (locals.user?.role !== 'admin') throw redirect(303, '/employee/dashboard');
 
-  const API_BASE = platform?.env?.API_URL ?? 'http://localhost:8787';
+  const API_BASE = platform?.env?.PUBLIC_API_URL ?? 'http://localhost:8787';
   try {
     const [svcRes, rolesRes] = await Promise.all([
       fetch(`${API_BASE}/api/admin/services`),

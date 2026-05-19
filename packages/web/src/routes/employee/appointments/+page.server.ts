@@ -11,7 +11,7 @@ type AppointmentRow = {
 };
 
 export const load: PageServerLoad = async ({ fetch, platform, url }) => {
-  const API_BASE = platform?.env?.API_URL ?? 'http://localhost:8787';
+  const API_BASE = platform?.env?.PUBLIC_API_URL ?? 'http://localhost:8787';
   const date = url.searchParams.get('date') ?? new Date().toISOString().slice(0, 10);
   try {
     const res = await fetch(`${API_BASE}/api/employee/appointments?date=${date}`);

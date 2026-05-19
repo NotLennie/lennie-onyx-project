@@ -9,7 +9,7 @@ type AppointmentRow = {
 };
 
 export const load: PageServerLoad = async ({ fetch, platform }) => {
-  const API_BASE = platform?.env?.API_URL ?? 'http://localhost:8787';
+  const API_BASE = platform?.env?.PUBLIC_API_URL ?? 'http://localhost:8787';
   try {
     const res = await fetch(`${API_BASE}/api/client/appointments`);
     if (!res.ok) return { appointments: [] as AppointmentRow[] };

@@ -14,7 +14,7 @@ declare global {
     }
     interface Platform {
       env: {
-        API_URL: string;
+        PUBLIC_API_URL: string;
       };
     }
   }

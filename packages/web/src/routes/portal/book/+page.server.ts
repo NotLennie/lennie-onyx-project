@@ -2,7 +2,7 @@ import type { PageServerLoad } from './$types';
 import type { Service } from '@project/shared';
 
 export const load: PageServerLoad = async ({ fetch, platform }) => {
-  const API_BASE = platform?.env?.API_URL ?? 'http://localhost:8787';
+  const API_BASE = platform?.env?.PUBLIC_API_URL ?? 'http://localhost:8787';
   try {
     const res = await fetch(`${API_BASE}/api/public/services`);
     if (!res.ok) return { services: [] as Service[] };
