@@ -25,9 +25,9 @@
       <div style="display:flex;align-items:center;gap:8px;margin-top:12px;">
         <div style="width:28px;height:28px;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);">
           {#if data.user.profilePictureUrl}
-            <img src={data.user.profilePictureUrl} alt="" style="width:100%;height:100%;object-fit:cover;" />
+            <img src={data.user.profilePictureUrl} alt="User avatar" style="width:100%;height:100%;object-fit:cover;" />
           {:else}
-            <img src="/icons/expert_stylist.png" alt="" style="width:18px;height:18px;opacity:0.85;" />
+            <img src="/icons/expert_stylist.png" alt="Default avatar" style="width:18px;height:18px;opacity:0.85;" />
           {/if}
         </div>
         <span style="color:rgba(255,255,255,0.6);font-size:10px;">{firstName}</span>
@@ -65,3 +65,12 @@
     {@render children()}
   </main>
 </div>
+
+<style>
+  nav a:hover {
+    color: rgba(255,255,255,0.7) !important;
+  }
+  button[type="submit"]:hover {
+    color: rgba(255,255,255,0.5) !important;
+  }
+</style>
