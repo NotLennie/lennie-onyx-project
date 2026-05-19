@@ -2,6 +2,3 @@ name = "lennie-onyx-project"
 compatibility_date = "2024-12-01"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".svelte-kit/cloudflare"
-
-[vars]
-PUBLIC_API_URL = "https://lennie-onyx-project-api.bold-bush-66e8.workers.dev"
