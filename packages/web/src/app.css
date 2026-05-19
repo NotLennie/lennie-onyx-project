@@ -8,8 +8,21 @@
   --color-border: #333333;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background-color: var(--color-bg);
   color: white;
   font-family: sans-serif;
+}
+
+section[id],
+footer[id] {
+  scroll-margin-top: 73px;
+}
+
+.font-script {
+  font-family: 'Great Vibes', cursive;
 }
