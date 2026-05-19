@@ -16,23 +16,89 @@
   let submitting = $state(false);
   let error = $state('');
 
-  // Generate valid dates (Thu–Sun) for next 4 weeks
-  const validDates = $derived.by(() => {
-    const dates: string[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    for (let i = 1; i <= 28; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
-      const day = d.getDay();
-      if ([0, 4, 5, 6].includes(day)) {
-        dates.push(d.toISOString().slice(0, 10));
-      }
+  // Calendar state
+  const now = new Date();
+  let calendarYear = $state(now.getFullYear());
+  let calendarMonth = $state(now.getMonth()); // 0-indexed
+
+  function toDateStr(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  }
+
+  const todayStr = toDateStr(now);
+  const cutoff = new Date(now);
+  cutoff.setDate(cutoff.getDate() + 14);
+  const cutoffStr = toDateStr(cutoff);
+
+  // Each cell: { day, dateStr, state }
+  type CellState = 'empty' | 'past' | 'today' | 'wednesday' | 'out-of-range' | 'available' | 'selected';
+  type Cell = { day: number | null; dateStr: string | null; state: CellState };
+
+  const calendarCells = $derived.by((): Cell[] => {
+    const firstDay = new Date(calendarYear, calendarMonth, 1);
+    const startDow = firstDay.getDay(); // 0=Sun
+    const daysInMonth = new Date(calendarYear, calendarMonth + 1, 0).getDate();
+    const cells: Cell[] = [];
+
+    for (let i = 0; i < startDow; i++) {
+      cells.push({ day: null, dateStr: null, state: 'empty' });
     }
-    return dates;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(calendarYear, calendarMonth, d);
+      const dateStr = `${calendarYear}-${String(calendarMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+      const dow = date.getDay();
+
+      let state: CellState;
+      if (dateStr < todayStr) {
+        state = 'past';
+      } else if (dateStr === todayStr) {
+        state = 'today';
+      } else if (dow === 3) {
+        state = 'wednesday';
+      } else if (dateStr > cutoffStr) {
+        state = 'out-of-range';
+      } else if (dateStr === selectedDate) {
+        state = 'selected';
+      } else {
+        state = 'available';
+      }
+
+      cells.push({ day: d, dateStr, state });
+    }
+
+    return cells;
   });
 
-  // Generate time slots within operating hours for selected service
+  const canGoPrev = $derived(
+    calendarYear > now.getFullYear() || calendarMonth > now.getMonth()
+  );
+  const canGoNext = $derived.by(() => {
+    const totalMonths = now.getFullYear() * 12 + now.getMonth() + 2;
+    const currentTotal = calendarYear * 12 + calendarMonth;
+    return currentTotal < totalMonths;
+  });
+
+  function prevMonth() {
+    if (!canGoPrev) return;
+    if (calendarMonth === 0) { calendarMonth = 11; calendarYear--; }
+    else calendarMonth--;
+  }
+
+  function nextMonth() {
+    if (!canGoNext) return;
+    if (calendarMonth === 11) { calendarMonth = 0; calendarYear++; }
+    else calendarMonth++;
+  }
+
+  const monthName = $derived(
+    new Date(calendarYear, calendarMonth, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toUpperCase()
+  );
+
+  // Time slots for selected service
   const timeSlots = $derived.by(() => {
     if (!selectedService) return [];
     const slots: string[] = [];
@@ -46,6 +112,12 @@
     }
     return slots;
   });
+
+  const selectedDateLabel = $derived(
+    selectedDate
+      ? new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })
+      : ''
+  );
 
   async function loadAvailability() {
     if (!selectedService || !selectedDate || !selectedTime) return;
@@ -89,12 +161,6 @@
     }
   }
 
-  function formatDate(d: string) {
-    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', {
-      weekday: 'short', month: 'short', day: 'numeric',
-    });
-  }
-
   function selectService(svc: Service) {
     selectedService = svc;
     selectedDate = '';
@@ -104,8 +170,8 @@
     step = 2;
   }
 
-  function selectDate(d: string) {
-    selectedDate = d;
+  function selectDate(dateStr: string) {
+    selectedDate = dateStr;
     selectedTime = '';
     availableEmployees = [];
     selectedEmployee = null;
@@ -122,130 +188,176 @@
     selectedEmployee = emp;
     step = 4;
   }
+
+  // Cell style helper
+  function cellStyle(state: CellState): string {
+    const base = 'text-align:center;font-size:9px;padding:6px 2px;';
+    if (state === 'empty') return base;
+    if (state === 'past') return base + 'color:rgba(255,255,255,0.15);';
+    if (state === 'today') return base + 'color:rgba(255,255,255,0.3);border:1px solid #555;';
+    if (state === 'wednesday') return base + 'color:rgba(255,255,255,0.1);';
+    if (state === 'out-of-range') return base + 'color:rgba(255,255,255,0.15);';
+    if (state === 'selected') return base + 'background:var(--color-gold);color:#000;font-weight:700;cursor:pointer;';
+    return base + 'color:white;cursor:pointer;'; // available
+  }
 </script>
 
-<div class="max-w-2xl">
-  <h1 class="text-3xl font-bold text-white mb-2">Book Appointment</h1>
-  <p class="text-gray-400 mb-8">We're open Thursday through Sunday, 7:00 AM – 7:00 PM.</p>
+
+<div style="max-width:560px;">
+  <!-- Header -->
+  <div style="color:rgba(255,255,255,0.4);font-size:8px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:4px;">Client Portal</div>
+  <div style="color:white;font-size:20px;font-family:serif;font-weight:300;letter-spacing:0.05em;margin-bottom:16px;">BOOK APPOINTMENT</div>
+
+  <!-- Step indicator -->
+  <div style="display:flex;gap:4px;margin-bottom:6px;">
+    {#each [1,2,3,4] as s}
+      <div style="height:2px;flex:1;{step >= s ? 'background:var(--color-gold);' : 'background:var(--color-border);'}"></div>
+    {/each}
+  </div>
+  <div style="color:rgba(255,255,255,0.25);font-size:8px;letter-spacing:0.1em;margin-bottom:20px;">
+    Step {step} of 4{selectedService ? ` — ${selectedService.name} · ${selectedService.durationMinutes} min · $${selectedService.price}` : ''}
+  </div>
 
   {#if error}
-    <div class="mb-4 p-3 rounded-lg text-sm" style="background-color: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3)">
+    <div role="alert" style="margin-bottom:12px;padding:10px 14px;font-size:10px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">
       {error}
     </div>
   {/if}
 
-  <!-- Step indicator -->
-  <div class="flex items-center gap-2 mb-8">
-    {#each [1,2,3,4] as s}
-      <div
-        class="h-1.5 flex-1 rounded-full transition-colors"
-        style={step >= s ? 'background-color: var(--color-gold)' : 'background-color: var(--color-border)'}
-      ></div>
-    {/each}
-  </div>
-
-  <!-- Step 1: Select service -->
+  <!-- Step 1: Choose a Service -->
   {#if step >= 1}
-    <section class="mb-6">
-      <h2 class="text-lg font-semibold text-white mb-3">1. Choose a Service</h2>
-      {#if data.services.length === 0}
-        <p class="text-gray-400 text-sm">No services available.</p>
-      {:else}
-        <div class="grid gap-2">
-          {#each data.services as svc}
-            <button
-              onclick={() => selectService(svc)}
-              class="flex items-center justify-between p-4 rounded-xl text-left transition-all"
-              style={selectedService?.id === svc.id
-                ? 'background-color: rgba(201,168,76,0.15); border: 1px solid var(--color-gold)'
-                : 'background-color: var(--color-surface); border: 1px solid var(--color-border)'}
-            >
-              <div>
-                <div class="font-medium text-white">{svc.name}</div>
-                {#if svc.description}
-                  <div class="text-sm text-gray-400 mt-0.5">{svc.description}</div>
-                {/if}
-              </div>
-              <div class="text-right flex-shrink-0 ml-4">
-                <div class="font-semibold" style="color: var(--color-gold)">${svc.price}</div>
-                <div class="text-xs text-gray-400">{svc.durationMinutes} min</div>
-              </div>
-            </button>
-          {/each}
-        </div>
-      {/if}
+    <section style="margin-bottom:20px;">
+      <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Choose a Service</div>
+      {#each data.services as svc}
+        <button
+          onclick={() => selectService(svc)}
+          style="width:100%;display:flex;justify-content:space-between;align-items:center;padding:12px;margin-bottom:4px;border:none;cursor:pointer;text-align:left;
+            {selectedService?.id === svc.id
+              ? 'background:rgba(201,168,76,0.08);border:1px solid var(--color-gold);'
+              : 'background:var(--color-surface);border:1px solid var(--color-border);'}"
+        >
+          <div>
+            <div style="color:white;font-size:11px;font-weight:500;margin-bottom:2px;">{svc.name}</div>
+            {#if svc.description}
+              <div style="color:rgba(255,255,255,0.4);font-size:9px;">{svc.description}</div>
+            {/if}
+          </div>
+          <div style="text-align:right;flex-shrink:0;margin-left:16px;">
+            <div style="color:var(--color-gold);font-size:11px;font-weight:600;">${svc.price}</div>
+            <div style="color:rgba(255,255,255,0.3);font-size:9px;">{svc.durationMinutes} min</div>
+          </div>
+        </button>
+      {/each}
     </section>
   {/if}
 
-  <!-- Step 2: Select date and time -->
+  <!-- Step 2: Calendar date picker + time slots -->
   {#if step >= 2 && selectedService}
-    <section class="mb-6">
-      <h2 class="text-lg font-semibold text-white mb-3">2. Choose Date &amp; Time</h2>
+    <section style="margin-bottom:20px;">
+      <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Choose a Date</div>
 
-      <div class="mb-4">
-        <p class="text-sm text-gray-400 mb-2">Available dates (Thu–Sun):</p>
-        <div class="flex flex-wrap gap-2">
-          {#each validDates as d}
-            <button
-              onclick={() => selectDate(d)}
-              class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
-              style={selectedDate === d
-                ? 'background-color: var(--color-gold); color: #1a1a1a'
-                : 'background-color: var(--color-surface); color: white; border: 1px solid var(--color-border)'}
-            >
-              {formatDate(d)}
-            </button>
+      <!-- Calendar -->
+      <div style="background:var(--color-surface);border:1px solid var(--color-border);padding:14px;margin-bottom:16px;max-width:290px;">
+        <!-- Month nav -->
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+          <button
+            onclick={prevMonth}
+            disabled={!canGoPrev}
+            style="background:none;border:none;cursor:{canGoPrev ? 'pointer' : 'default'};color:{canGoPrev ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)'};font-size:14px;padding:0 4px;"
+          >‹</button>
+          <div style="color:white;font-size:10px;letter-spacing:0.15em;">{monthName}</div>
+          <button
+            onclick={nextMonth}
+            disabled={!canGoNext}
+            style="background:none;border:none;cursor:{canGoNext ? 'pointer' : 'default'};color:{canGoNext ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)'};font-size:14px;padding:0 4px;"
+          >›</button>
+        </div>
+
+        <!-- Day headers -->
+        <div class="calendar-grid" style="margin-bottom:4px;">
+          {#each ['Su','Mo','Tu','We','Th','Fr','Sa'] as dow, i}
+            <div style="text-align:center;font-size:8px;letter-spacing:0.08em;padding:3px 0;
+              {i === 3 ? 'color:rgba(255,255,255,0.2);text-decoration:line-through;' : 'color:var(--color-gold);'}">
+              {dow}
+            </div>
           {/each}
+        </div>
+
+        <!-- Day cells -->
+        <div class="calendar-grid">
+          {#each calendarCells as cell}
+            {#if cell.state === 'available' || cell.state === 'selected'}
+              <button
+                onclick={() => cell.dateStr && selectDate(cell.dateStr)}
+                style="background:none;border:none;{cellStyle(cell.state)}"
+              >{cell.day}</button>
+            {:else}
+              <div style={cellStyle(cell.state)}>{cell.day ?? ''}</div>
+            {/if}
+          {/each}
+        </div>
+
+        <!-- Legend -->
+        <div style="border-top:1px solid var(--color-border);margin-top:10px;padding-top:8px;display:flex;gap:14px;flex-wrap:wrap;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <div style="width:8px;height:8px;background:var(--color-gold);"></div>
+            <div style="color:rgba(255,255,255,0.3);font-size:8px;">Selected</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <div style="width:8px;height:8px;border:1px solid #555;"></div>
+            <div style="color:rgba(255,255,255,0.3);font-size:8px;">Today</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <div style="width:8px;height:8px;background:rgba(255,255,255,0.05);"></div>
+            <div style="color:rgba(255,255,255,0.3);font-size:8px;">Unavailable</div>
+          </div>
         </div>
       </div>
 
+      <!-- Time slots — shown after date selected -->
       {#if selectedDate}
-        <div>
-          <p class="text-sm text-gray-400 mb-2">Available times:</p>
-          <div class="flex flex-wrap gap-2">
-            {#each timeSlots as t}
-              <button
-                onclick={() => selectTime(t)}
-                class="px-3 py-1.5 rounded-lg text-sm font-medium transition-all"
-                style={selectedTime === t
-                  ? 'background-color: var(--color-gold); color: #1a1a1a'
-                  : 'background-color: var(--color-surface); color: white; border: 1px solid var(--color-border)'}
-              >
-                {t}
-              </button>
-            {/each}
-          </div>
+        <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:8px;">
+          Available Times — {selectedDateLabel}
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:4px;">
+          {#each timeSlots as t}
+            <button
+              onclick={() => selectTime(t)}
+              style="padding:6px 12px;font-size:9px;border:none;cursor:pointer;
+                {selectedTime === t
+                  ? 'background:var(--color-gold);color:#000;font-weight:600;'
+                  : 'background:var(--color-surface);border:1px solid var(--color-border);color:rgba(255,255,255,0.5);'}"
+            >{t}</button>
+          {/each}
         </div>
       {/if}
     </section>
   {/if}
 
-  <!-- Step 3: Select employee -->
+  <!-- Step 3: Choose a Stylist -->
   {#if step >= 3 && selectedTime}
-    <section class="mb-6">
-      <h2 class="text-lg font-semibold text-white mb-3">3. Choose a Stylist</h2>
+    <section style="margin-bottom:20px;">
+      <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Choose a Stylist</div>
       {#if loadingEmployees}
-        <p class="text-gray-400 text-sm">Checking availability…</p>
-      {:else if availableEmployees.length === 0 && !error}
-        <p class="text-gray-400 text-sm">No stylists available.</p>
+        <div style="color:rgba(255,255,255,0.3);font-size:10px;">Checking availability…</div>
       {:else}
-        <div class="grid gap-2">
-          {#each availableEmployees as emp}
-            <button
-              onclick={() => selectEmployee(emp)}
-              class="flex items-center gap-3 p-4 rounded-xl text-left transition-all"
-              style={selectedEmployee?.id === emp.id
-                ? 'background-color: rgba(201,168,76,0.15); border: 1px solid var(--color-gold)'
-                : 'background-color: var(--color-surface); border: 1px solid var(--color-border)'}
-            >
-              <div class="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm flex-shrink-0"
-                style="background-color: rgba(201,168,76,0.2); color: var(--color-gold)">
-                {emp.name.charAt(0).toUpperCase()}
-              </div>
-              <span class="font-medium text-white">{emp.name}</span>
-            </button>
-          {/each}
-        </div>
+        {#each availableEmployees as emp}
+          <button
+            onclick={() => selectEmployee(emp)}
+            style="width:100%;display:flex;align-items:center;gap:12px;padding:12px;margin-bottom:4px;border:none;cursor:pointer;text-align:left;
+              {selectedEmployee?.id === emp.id
+                ? 'background:rgba(201,168,76,0.08);border:1px solid var(--color-gold);'
+                : 'background:var(--color-surface);border:1px solid var(--color-border);'}"
+          >
+            <div style="width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;font-family:serif;
+              {selectedEmployee?.id === emp.id
+                ? 'background:rgba(201,168,76,0.2);color:var(--color-gold);'
+                : 'background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);'}">
+              {emp.name.charAt(0).toUpperCase()}
+            </div>
+            <span style="color:{selectedEmployee?.id === emp.id ? 'white' : 'rgba(255,255,255,0.6)'};font-size:11px;">{emp.name}</span>
+          </button>
+        {/each}
       {/if}
     </section>
   {/if}
@@ -253,36 +365,35 @@
   <!-- Step 4: Confirm -->
   {#if step >= 4 && selectedEmployee}
     <section>
-      <h2 class="text-lg font-semibold text-white mb-3">4. Confirm Booking</h2>
-      <div class="rounded-xl p-5 mb-4" style="background-color: var(--color-surface); border: 1px solid var(--color-border)">
-        <div class="space-y-2 text-sm">
-          <div class="flex justify-between">
-            <span class="text-gray-400">Service</span>
-            <span class="text-white font-medium">{selectedService?.name}</span>
+      <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Confirm Booking</div>
+      <div style="background:var(--color-surface);border:1px solid var(--color-border);border-top:2px solid var(--color-gold);padding:14px;margin-bottom:12px;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+          <div>
+            <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Service</div>
+            <div style="color:white;font-size:10px;">{selectedService?.name}</div>
           </div>
-          <div class="flex justify-between">
-            <span class="text-gray-400">Date</span>
-            <span class="text-white">{formatDate(selectedDate)}</span>
+          <div>
+            <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Stylist</div>
+            <div style="color:white;font-size:10px;">{selectedEmployee?.name}</div>
           </div>
-          <div class="flex justify-between">
-            <span class="text-gray-400">Time</span>
-            <span class="text-white">{selectedTime}</span>
+          <div>
+            <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Date</div>
+            <div style="color:white;font-size:10px;">{selectedDateLabel}</div>
           </div>
-          <div class="flex justify-between">
-            <span class="text-gray-400">Stylist</span>
-            <span class="text-white">{selectedEmployee?.name}</span>
+          <div>
+            <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Time</div>
+            <div style="color:white;font-size:10px;">{selectedTime}</div>
           </div>
-          <div class="flex justify-between pt-2" style="border-top: 1px solid var(--color-border)">
-            <span class="text-gray-400">Price</span>
-            <span class="font-semibold" style="color: var(--color-gold)">${selectedService?.price}</span>
-          </div>
+        </div>
+        <div style="border-top:1px solid var(--color-border);padding-top:10px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Total</div>
+          <div style="color:var(--color-gold);font-size:14px;font-weight:600;">${selectedService?.price}</div>
         </div>
       </div>
       <button
         onclick={submit}
         disabled={submitting}
-        class="w-full py-3 rounded-xl font-semibold text-sm transition-opacity disabled:opacity-50"
-        style="background-color: var(--color-gold); color: #1a1a1a"
+        style="width:100%;background:var(--color-gold);border:none;color:#000;padding:12px;font-size:9px;letter-spacing:0.25em;text-transform:uppercase;font-weight:600;cursor:pointer;"
       >
         {submitting ? 'Booking…' : 'Confirm Booking'}
       </button>

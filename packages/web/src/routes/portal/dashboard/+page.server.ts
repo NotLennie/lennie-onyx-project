@@ -12,13 +12,18 @@ export const load: PageServerLoad = async ({ fetch, platform }) => {
   const API_BASE = platform?.env?.PUBLIC_API_URL ?? 'http://localhost:8787';
   try {
     const res = await fetch(`${API_BASE}/api/client/appointments`);
-    if (!res.ok) return { appointments: [] as AppointmentRow[] };
+    if (!res.ok) return { upcoming: [] as AppointmentRow[], recentActivity: [] as AppointmentRow[] };
     const data = await res.json() as { appointments: AppointmentRow[] };
+    const today = new Date().toISOString().slice(0, 10);
     const upcoming = data.appointments
-      .filter((a) => a.status === 'confirmed' && a.date >= new Date().toISOString().slice(0, 10))
-      .slice(0, 3);
-    return { appointments: upcoming };
+      .filter((a) => a.status === 'confirmed' && a.date >= today)
+      .slice(0, 1);
+    const recentActivity = data.appointments
+      .filter((a) => a.status === 'cancelled' || a.status === 'completed')
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .slice(0, 5);
+    return { upcoming, recentActivity };
   } catch {
-    return { appointments: [] as AppointmentRow[] };
+    return { upcoming: [] as AppointmentRow[], recentActivity: [] as AppointmentRow[] };
   }
 };

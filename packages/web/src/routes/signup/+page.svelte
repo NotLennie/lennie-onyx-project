@@ -10,16 +10,20 @@
 
 <div class="min-h-screen flex flex-col" style="background: var(--color-bg);">
 
-  <!-- Top-left logo -->
-  <div class="p-8">
-    <a href="/" class="inline-flex flex-col leading-none">
-      <span class="font-serif text-xl tracking-[0.3em] uppercase" style="color: var(--color-gold);">Onyx</span>
-      <span class="text-[9px] tracking-[0.25em] uppercase" style="color: rgba(255,255,255,0.35);">Hair Salon</span>
-    </a>
+  <!-- Back link -->
+  <div class="p-6">
+    <a href="/" class="text-xs tracking-[0.15em] uppercase transition-colors hover:text-white" style="color: rgba(255,255,255,0.4);">← Back to site</a>
   </div>
 
-  <!-- Centered card -->
-  <div class="flex-1 flex items-center justify-center px-4 pb-16">
+  <!-- Centered: logo + card -->
+  <div class="flex-1 flex flex-col items-center justify-center px-4 pb-16">
+
+    <!-- Logo centered above card -->
+    <a href="/" class="inline-flex flex-col items-center leading-none mb-8">
+      <span class="font-serif text-xl tracking-[0.3em] uppercase" style="color: var(--color-gold);">Onyx</span>
+      <span class="text-[9px] tracking-[0.25em] uppercase mt-1" style="color: rgba(255,255,255,0.35);">Hair Salon</span>
+    </a>
+
     <div class="w-full max-w-md" style="background: var(--color-surface); border: 1px solid var(--color-border); border-top: 2px solid var(--color-gold);">
       <div class="p-8">
 
@@ -100,9 +104,3 @@
   </div>
 
 </div>
-
-<style>
-  input:focus {
-    outline: 1px solid var(--color-gold);
-  }
-</style>

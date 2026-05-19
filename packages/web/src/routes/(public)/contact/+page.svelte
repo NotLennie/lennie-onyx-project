@@ -14,7 +14,7 @@
       <div class="space-y-8">
         <div>
           <p class="text-xs tracking-[0.2em] uppercase opacity-35 mb-2">Hours</p>
-          <p class="text-sm">Thursday – Sunday</p>
+          <p class="text-sm">Thursday – Tuesday</p>
           <p class="text-sm">7:00 AM – 7:00 PM</p>
         </div>
         <div>

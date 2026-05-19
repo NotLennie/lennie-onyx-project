@@ -38,7 +38,7 @@
         </div>
         <div class="flex items-start gap-3">
           <img src="/icons/contact_us_hours.png" alt="" class="w-5 h-5 mt-0.5 shrink-0" style="opacity: 0.65;" />
-          <span class="text-sm" style="color: rgba(255,255,255,0.6);">Thursday – Sunday · 7:00 AM – 7:00 PM</span>
+          <span class="text-sm" style="color: rgba(255,255,255,0.6);">Thursday – Tuesday · 7:00 AM – 7:00 PM</span>
         </div>
       </div>
 
