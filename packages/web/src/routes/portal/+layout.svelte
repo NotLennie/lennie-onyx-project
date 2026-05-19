@@ -34,15 +34,10 @@
     </nav>
 
     <div class="p-4" style="border-top: 1px solid var(--color-border)">
-      <form method="POST" action="/api/auth/logout">
+      <form method="POST" action="/logout">
         <button
           type="submit"
           class="w-full px-4 py-2.5 rounded-lg text-sm font-medium text-left transition-colors text-gray-400 hover:text-white"
-          onclick={async (e) => {
-            e.preventDefault();
-            await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-            window.location.href = '/login';
-          }}
         >
           Sign Out
         </button>
