@@ -27,7 +27,7 @@
         <h1 class="font-serif text-2xl font-light tracking-[0.05em] text-white mb-8">SIGN IN</h1>
 
         {#if form?.error}
-          <p class="text-sm mb-6" style="color: #f87171;">{form.error}</p>
+          <p class="text-sm mb-6" role="alert" style="color: #f87171;">{form.error}</p>
         {/if}
 
         <form method="POST" class="space-y-6">
@@ -40,11 +40,10 @@
               name="email"
               type="email"
               required
+              autocomplete="email"
               placeholder="you@example.com"
               class="w-full px-4 py-3 text-sm text-white"
-              style="background: #111; border: 1px solid var(--color-border); outline: none;"
-              onfocus="this.style.outline='1px solid var(--color-gold)'"
-              onblur="this.style.outline='none'"
+              style="background: #111; border: 1px solid var(--color-border);"
             />
           </div>
 
@@ -57,11 +56,10 @@
               name="password"
               type="password"
               required
+              autocomplete="current-password"
               placeholder="••••••••"
               class="w-full px-4 py-3 text-sm text-white"
-              style="background: #111; border: 1px solid var(--color-border); outline: none;"
-              onfocus="this.style.outline='1px solid var(--color-gold)'"
-              onblur="this.style.outline='none'"
+              style="background: #111; border: 1px solid var(--color-border);"
             />
           </div>
 
@@ -84,3 +82,9 @@
   </div>
 
 </div>
+
+<style>
+  input:focus {
+    outline: 1px solid var(--color-gold);
+  }
+</style>
