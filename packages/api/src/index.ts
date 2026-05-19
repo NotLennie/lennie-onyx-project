@@ -5,6 +5,7 @@ import { createDbClient } from './db/client';
 import { UserSessions } from './auth/sessions';
 import { authRoutes } from './routes/auth';
 import { publicRoutes } from './routes/public';
+import { clientRoutes } from './routes/client';
 import { employeeRoutes } from './routes/employee';
 import { adminRoutes } from './routes/admin';
 
@@ -27,6 +28,7 @@ app.use('*', async (c, next) => {
 
 app.route('/api/auth', authRoutes);
 app.route('/api/public', publicRoutes);
+app.route('/api/client', clientRoutes);
 app.route('/api/employee', employeeRoutes);
 app.route('/api/admin', adminRoutes);
 
