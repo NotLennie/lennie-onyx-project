@@ -19,7 +19,7 @@
       We believe that great hair care starts with great listening. Every client is unique, and every service we provide is tailored to reflect that.
     </p>
     <p class="text-sm leading-relaxed opacity-60">
-      We are open Thursday through Sunday, 7 AM to 7 PM, offering 30-minute booking slots.
+      We are open Thursday through Tuesday, 7 AM to 7 PM, offering 30-minute booking slots.
     </p>
   </div>
 </section>

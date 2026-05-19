@@ -126,7 +126,7 @@
 
 <div class="max-w-2xl">
   <h1 class="text-3xl font-bold text-white mb-2">Book Appointment</h1>
-  <p class="text-gray-400 mb-8">We're open Thursday through Sunday, 7:00 AM – 7:00 PM.</p>
+  <p class="text-gray-400 mb-8">We're open Thursday through Tuesday, 7:00 AM – 7:00 PM.</p>
 
   {#if error}
     <div class="mb-4 p-3 rounded-lg text-sm" style="background-color: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3)">

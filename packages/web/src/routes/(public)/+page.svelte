@@ -103,7 +103,7 @@
       leaves you feeling confident and beautiful.
     </p>
     <p class="text-sm leading-relaxed" style="color: rgba(255,255,255,0.5);">
-      Open Thursday through Sunday, 7 AM to 7 PM — because great hair deserves great timing.
+      Open Thursday through Tuesday, 7 AM to 7 PM — because great hair deserves great timing.
     </p>
   </div>
 </section>
