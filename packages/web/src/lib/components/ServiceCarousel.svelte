@@ -46,14 +46,10 @@
       : FALLBACK
   );
 
+  const slotCount = $derived(Math.min(VISIBLE, items.length));
+
   let startIndex = $state(0);
   let autoTimer: ReturnType<typeof setInterval> | null = null;
-
-  const visibleCards = $derived(
-    Array.from({ length: Math.min(VISIBLE, items.length) }, (_, i) =>
-      items[(startIndex + i) % items.length]
-    )
-  );
 
   function startAuto() {
     if (autoTimer) clearInterval(autoTimer);
@@ -99,27 +95,36 @@
     ‹
   </button>
 
-  <!-- Cards grid -->
+  <!--
+    Fixed-slot grid: the <a> elements never enter/leave the DOM, so the grid
+    layout is always stable. Only the inner content crossfades via {#key}.
+  -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    {#each visibleCards as card (card.type)}
-      <a
-        href="/#cta"
-        class="relative overflow-hidden block"
-        style="aspect-ratio: 3/4;"
-        transition:fade={{ duration: 400 }}
-      >
-        <img
-          src={SERVICE_IMAGES[card.type] ?? '/images/services_haircut.png'}
-          alt={card.name}
-          class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
-        />
-        <div
-          class="absolute inset-x-0 bottom-0"
-          style="height: 50%; background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 50%, transparent 100%);"
-        ></div>
-        <p class="absolute bottom-4 left-0 right-0 text-center font-serif text-sm text-white px-3 z-10">
-          {card.name}
-        </p>
+    {#each Array.from({ length: slotCount }, (_, i) => i) as slotIndex}
+      {@const card = items[(startIndex + slotIndex) % items.length]}
+      <a href="/#cta" class="relative overflow-hidden block" style="aspect-ratio: 3/4;">
+        {#key card.type}
+          <img
+            src={SERVICE_IMAGES[card.type] ?? '/images/services_haircut.png'}
+            alt={card.name}
+            class="absolute inset-0 w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+            in:fade={{ duration: 500 }}
+            out:fade={{ duration: 500 }}
+          />
+          <div
+            class="absolute inset-x-0 bottom-0"
+            style="height: 50%; background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 50%, transparent 100%);"
+            in:fade={{ duration: 500 }}
+            out:fade={{ duration: 500 }}
+          ></div>
+          <p
+            class="absolute bottom-4 left-0 right-0 text-center font-serif text-sm text-white px-3 z-10"
+            in:fade={{ duration: 500 }}
+            out:fade={{ duration: 500 }}
+          >
+            {card.name}
+          </p>
+        {/key}
       </a>
     {/each}
   </div>

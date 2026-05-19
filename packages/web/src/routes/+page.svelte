@@ -25,11 +25,11 @@
     min-height: 90vh;
     background-image: url('/images/header.png');
     background-size: cover;
-    background-position: center;
+    background-position: top center;
   "
 >
   <div class="absolute inset-0" style="background: rgba(0,0,0,0.62);"></div>
-  <div class="relative z-10 px-8 md:px-20 max-w-3xl text-center">
+  <div class="relative z-10 px-8 md:px-20 max-w-3xl text-center md:ml-16">
     <p class="text-xs tracking-[0.4em] uppercase mb-6" style="color: var(--color-gold);">
       Luxury Hair Salon
     </p>
