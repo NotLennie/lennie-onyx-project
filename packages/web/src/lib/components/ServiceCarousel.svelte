@@ -98,7 +98,7 @@
 
   <!-- Cards grid -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-    {#each visibleCards as card (`${card.type}-${startIndex}`)}
+    {#each visibleCards as card (card.type)}
       <div class="relative overflow-hidden" style="aspect-ratio: 3/4;">
         <img
           src={SERVICE_IMAGES[card.type] ?? '/images/services_haircut.png'}
