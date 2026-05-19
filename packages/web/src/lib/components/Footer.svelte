@@ -1,7 +1,3 @@
-<script lang="ts">
-  // Footer component - rich footer with contact info and social media
-</script>
-
 <footer
   id="contact"
   class="pt-16 pb-8 px-8"
