@@ -13,7 +13,7 @@ export const actions: Actions = {
       }).catch(() => {});
     }
 
-    cookies.delete('session', { path: '/' });
+    cookies.delete('session', { path: '/', secure: true, sameSite: 'lax', httpOnly: true });
     throw redirect(303, '/login');
   },
 };
