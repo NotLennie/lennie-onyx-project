@@ -35,7 +35,7 @@
     </div>
 
     <!-- Nav -->
-    <nav style="padding:10px 8px;flex:1;">
+    <nav class="portal-nav" style="padding:10px 8px;flex:1;">
       {#each navLinks as link}
         {@const active = $page.url.pathname === link.href || $page.url.pathname.startsWith(link.href + '/')}
         <a
@@ -65,12 +65,3 @@
     {@render children()}
   </main>
 </div>
-
-<style>
-  nav a:hover {
-    color: rgba(255,255,255,0.7) !important;
-  }
-  button[type="submit"]:hover {
-    color: rgba(255,255,255,0.5) !important;
-  }
-</style>

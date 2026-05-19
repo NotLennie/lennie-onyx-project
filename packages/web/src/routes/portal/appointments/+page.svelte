@@ -90,10 +90,6 @@
   ] as const;
 </script>
 
-<style>
-  input:focus { outline: 1px solid var(--color-gold); }
-  select:focus { outline: 1px solid var(--color-gold); }
-</style>
 
 <div style="max-width:640px;">
   <!-- Header -->

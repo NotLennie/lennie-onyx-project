@@ -202,9 +202,6 @@
   }
 </script>
 
-<style>
-  .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
-</style>
 
 <div style="max-width:560px;">
   <!-- Header -->

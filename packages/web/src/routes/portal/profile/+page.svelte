@@ -90,26 +90,6 @@
   }
 </script>
 
-<style>
-  input:focus { outline: 1px solid var(--color-gold); }
-  .field-label {
-    display: block;
-    color: rgba(255,255,255,0.3);
-    font-size: 8px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-  .field-input {
-    width: 100%;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    color: white;
-    font-size: 10px;
-    padding: 8px 10px;
-    box-sizing: border-box;
-  }
-</style>
 
 <div style="max-width:520px;">
   <!-- Header -->

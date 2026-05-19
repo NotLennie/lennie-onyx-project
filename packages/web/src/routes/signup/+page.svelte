@@ -104,9 +104,3 @@
   </div>
 
 </div>
-
-<style>
-  input:focus {
-    outline: 1px solid var(--color-gold);
-  }
-</style>
