@@ -52,25 +52,25 @@
 </section>
 
 <!-- Features Strip -->
-<section id="features" class="py-20 px-8" style="background: var(--color-cream);">
-  <div class="max-w-5xl mx-auto text-center">
+<section id="features" class="py-24 px-8" style="background: var(--color-cream);">
+  <div class="max-w-6xl mx-auto text-center">
     <!-- Row 1: first 3 -->
-    <div class="grid grid-cols-1 sm:grid-cols-3 gap-10 mb-12">
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-12 mb-16">
       {#each features.slice(0, 3) as f}
-        <div class="flex flex-col items-center">
-          <img src={f.icon} alt={f.label} class="w-12 h-12 mb-4 object-contain" />
-          <h3 class="text-sm tracking-[0.15em] uppercase font-semibold mb-2" style="color: #1a1a1a;">{f.label}</h3>
-          <p class="text-xs leading-relaxed" style="color: rgba(26,26,26,0.55);">{f.desc}</p>
+        <div class="flex flex-col items-center px-4">
+          <img src={f.icon} alt={f.label} class="w-12 h-12 mb-6 object-contain" />
+          <h3 class="text-sm tracking-[0.15em] uppercase font-semibold mb-3" style="color: #1a1a1a;">{f.label}</h3>
+          <p class="text-sm leading-relaxed" style="color: rgba(26,26,26,0.55);">{f.desc}</p>
         </div>
       {/each}
     </div>
     <!-- Row 2: last 2, centered -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-10 max-w-2xl mx-auto">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-12 max-w-2xl mx-auto">
       {#each features.slice(3) as f}
-        <div class="flex flex-col items-center">
-          <img src={f.icon} alt={f.label} class="w-12 h-12 mb-4 object-contain" />
-          <h3 class="text-sm tracking-[0.15em] uppercase font-semibold mb-2" style="color: #1a1a1a;">{f.label}</h3>
-          <p class="text-xs leading-relaxed" style="color: rgba(26,26,26,0.55);">{f.desc}</p>
+        <div class="flex flex-col items-center px-4">
+          <img src={f.icon} alt={f.label} class="w-12 h-12 mb-6 object-contain" />
+          <h3 class="text-sm tracking-[0.15em] uppercase font-semibold mb-3" style="color: #1a1a1a;">{f.label}</h3>
+          <p class="text-sm leading-relaxed" style="color: rgba(26,26,26,0.55);">{f.desc}</p>
         </div>
       {/each}
     </div>
