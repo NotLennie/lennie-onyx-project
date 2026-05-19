@@ -68,15 +68,10 @@
     </div>
 
     <!-- Bottom row -->
-    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+    <div class="text-center">
       <p class="text-xs" style="color: rgba(255,255,255,0.25);">
         © {new Date().getFullYear()} Onyx Hair Salon
       </p>
-      <div class="flex gap-8 text-xs tracking-[0.15em] uppercase" style="color: rgba(255,255,255,0.4);">
-        <a href="/#about" class="transition-colors duration-200 hover:text-white">About</a>
-        <a href="/#services" class="transition-colors duration-200 hover:text-white">Services</a>
-        <a href="/login" class="transition-colors duration-200 hover:text-white">Login</a>
-      </div>
     </div>
 
   </div>

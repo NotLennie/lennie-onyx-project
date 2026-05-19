@@ -5,7 +5,7 @@
     { href: '/', label: 'Home' },
     { href: '/#about', label: 'About' },
     { href: '/#services', label: 'Services' },
-    { href: '/#contact', label: 'Contact Us' },
+    { href: '/#cta', label: 'Contact Us' },
   ];
 </script>
 
@@ -39,14 +39,14 @@
       class="text-xs tracking-[0.2em] uppercase px-5 py-2.5 border transition-all duration-200 hover:bg-[#C9A84C] hover:text-black"
       style="border-color: var(--color-gold); color: var(--color-gold);"
     >
-      Login
+      Login / Sign Up
     </a>
     <a
-      href="/signup"
+      href="/employee"
       class="hidden sm:inline-block text-xs tracking-[0.2em] uppercase px-5 py-2.5 transition-all duration-200 hover:opacity-90"
       style="background: var(--color-gold); color: #000;"
     >
-      Book an Appointment
+      Employee Portal
     </a>
   </div>
 </nav>

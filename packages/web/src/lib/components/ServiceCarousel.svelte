@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { fade } from 'svelte/transition';
   import type { Service } from '@project/shared';
 
   let { services }: { services: Service[] } = $props();
@@ -101,7 +102,12 @@
   <!-- Cards grid -->
   <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
     {#each visibleCards as card (card.type)}
-      <div class="relative overflow-hidden" style="aspect-ratio: 3/4;">
+      <a
+        href="/#cta"
+        class="relative overflow-hidden block"
+        style="aspect-ratio: 3/4;"
+        transition:fade={{ duration: 400 }}
+      >
         <img
           src={SERVICE_IMAGES[card.type] ?? '/images/services_haircut.png'}
           alt={card.name}
@@ -109,12 +115,12 @@
         />
         <div
           class="absolute inset-x-0 bottom-0"
-          style="height: 40%; background: linear-gradient(to top, rgba(0,0,0,0.85), transparent);"
+          style="height: 50%; background: linear-gradient(to top, rgba(0,0,0,0.92) 0%, rgba(0,0,0,0.5) 50%, transparent 100%);"
         ></div>
-        <p class="absolute bottom-4 left-0 right-0 text-center font-serif text-sm text-white px-3">
+        <p class="absolute bottom-4 left-0 right-0 text-center font-serif text-sm text-white px-3 z-10">
           {card.name}
         </p>
-      </div>
+      </a>
     {/each}
   </div>
 

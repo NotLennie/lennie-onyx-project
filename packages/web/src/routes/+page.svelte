@@ -3,6 +3,14 @@
   import ServiceCarousel from '$lib/components/ServiceCarousel.svelte';
 
   let { data }: { data: PageData } = $props();
+
+  const features = [
+    { icon: '/icons/premium.png', label: 'Premium Products', desc: 'We use only salon-grade products for lasting, healthy results.' },
+    { icon: '/icons/expert_stylist.png', label: 'Expert Stylist', desc: 'Precision and artistry from stylists trained in the latest techniques.' },
+    { icon: '/icons/luxurious_experience.png', label: 'Luxurious Experience', desc: 'Every visit is designed to feel like a retreat, not just a service.' },
+    { icon: '/icons/customer_satisfaction.png', label: 'Customer Satisfaction', desc: "Your happiness is our standard — we don't stop until you love it." },
+    { icon: '/icons/easy_booking.png', label: 'Easy Booking', desc: 'Book online in minutes, anytime, with 30-minute appointment slots.' },
+  ];
 </script>
 
 <svelte:head>
@@ -21,7 +29,7 @@
   "
 >
   <div class="absolute inset-0" style="background: rgba(0,0,0,0.62);"></div>
-  <div class="relative z-10 px-8 md:px-20 max-w-3xl">
+  <div class="relative z-10 px-8 md:px-20 max-w-3xl text-center">
     <p class="text-xs tracking-[0.4em] uppercase mb-6" style="color: var(--color-gold);">
       Luxury Hair Salon
     </p>
@@ -30,7 +38,7 @@
       <span class="font-script" style="color: var(--color-gold); font-size: 1.15em;">Meets</span><br />
       EXCELLENCE
     </h1>
-    <p class="text-sm leading-relaxed mb-12" style="color: rgba(255,255,255,0.6); max-width: 28rem;">
+    <p class="text-sm leading-relaxed mb-12 mx-auto" style="color: rgba(255,255,255,0.6); max-width: 28rem;">
       Experience premium hair care services in a luxurious and relaxing environment tailored just for you.
     </p>
     <a
@@ -45,42 +53,27 @@
 
 <!-- Features Strip -->
 <section id="features" class="py-20 px-8" style="background: var(--color-cream);">
-  <div class="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-5 gap-10 text-center">
-    {#each [
-      {
-        icon: '/icons/premium.png',
-        label: 'Premium Products',
-        desc: 'We use only salon-grade products for lasting, healthy results.',
-      },
-      {
-        icon: '/icons/expert_stylist.png',
-        label: 'Expert Stylist',
-        desc: 'Precision and artistry from stylists trained in the latest techniques.',
-      },
-      {
-        icon: '/icons/luxurious_experience.png',
-        label: 'Luxurious Experience',
-        desc: 'Every visit is designed to feel like a retreat, not just a service.',
-      },
-      {
-        icon: '/icons/customer_satisfaction.png',
-        label: 'Customer Satisfaction',
-        desc: "Your happiness is our standard — we don't stop until you love it.",
-      },
-      {
-        icon: '/icons/easy_booking.png',
-        label: 'Easy Booking',
-        desc: 'Book online in minutes, anytime, with 30-minute appointment slots.',
-      },
-    ] as f}
-      <div class="flex flex-col items-center">
-        <img src={f.icon} alt={f.label} class="w-10 h-10 mb-4 object-contain" />
-        <h3 class="text-xs tracking-[0.15em] uppercase font-semibold mb-2" style="color: #1a1a1a;">
-          {f.label}
-        </h3>
-        <p class="text-xs leading-relaxed" style="color: rgba(26,26,26,0.55);">{f.desc}</p>
-      </div>
-    {/each}
+  <div class="max-w-5xl mx-auto text-center">
+    <!-- Row 1: first 3 -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-10 mb-12">
+      {#each features.slice(0, 3) as f}
+        <div class="flex flex-col items-center">
+          <img src={f.icon} alt={f.label} class="w-12 h-12 mb-4 object-contain" />
+          <h3 class="text-sm tracking-[0.15em] uppercase font-semibold mb-2" style="color: #1a1a1a;">{f.label}</h3>
+          <p class="text-xs leading-relaxed" style="color: rgba(26,26,26,0.55);">{f.desc}</p>
+        </div>
+      {/each}
+    </div>
+    <!-- Row 2: last 2, centered -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-10 max-w-2xl mx-auto">
+      {#each features.slice(3) as f}
+        <div class="flex flex-col items-center">
+          <img src={f.icon} alt={f.label} class="w-12 h-12 mb-4 object-contain" />
+          <h3 class="text-sm tracking-[0.15em] uppercase font-semibold mb-2" style="color: #1a1a1a;">{f.label}</h3>
+          <p class="text-xs leading-relaxed" style="color: rgba(26,26,26,0.55);">{f.desc}</p>
+        </div>
+      {/each}
+    </div>
   </div>
 </section>
 
@@ -133,9 +126,9 @@
   id="cta"
   class="relative flex items-center justify-center text-center py-40 px-8"
   style="
-    background-image: url('/images/header.png');
+    background-image: url('/images/extra_background.png');
     background-size: cover;
-    background-position: center top;
+    background-position: center;
   "
 >
   <div class="absolute inset-0" style="background: rgba(0,0,0,0.68);"></div>
