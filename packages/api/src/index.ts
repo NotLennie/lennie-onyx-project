@@ -6,6 +6,8 @@ import { UserSessions } from './auth/sessions';
 import { authRoutes } from './routes/auth';
 import { publicRoutes } from './routes/public';
 import { clientRoutes } from './routes/client';
+import { employeeRoutes } from './routes/employee';
+import { adminRoutes } from './routes/admin';
 
 const app = new Hono<Env>();
 
@@ -27,6 +29,8 @@ app.use('*', async (c, next) => {
 app.route('/api/auth', authRoutes);
 app.route('/api/public', publicRoutes);
 app.route('/api/client', clientRoutes);
+app.route('/api/employee', employeeRoutes);
+app.route('/api/admin', adminRoutes);
 
 export default app;
 export { UserSessions };
