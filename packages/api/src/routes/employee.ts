@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
+import { z } from 'zod';
 import type { Env } from '../types';
 import { requireAuth } from '../auth/middleware';
 import {
   employees, appointments, appointmentServices,
-  services, clients, ptoRequests,
+  services, serviceRoles, clients, ptoRequests, roles, employeeRoles,
 } from '../db/schema';
-import { eq, and, desc } from 'drizzle-orm';
+import { eq, and, desc, sql } from 'drizzle-orm';
 import { updateEmployeeSchema, createPtoRequestSchema } from '@project/shared';
 import { hashPassword, verifyPassword } from '../auth/crypto';
 
@@ -24,7 +25,10 @@ employeeRoutes.use('*', async (c, next) => {
 employeeRoutes.get('/appointments', async (c) => {
   const db = c.get('db');
   const employeeId = c.get('userId');
-  const date = c.req.query('date') ?? new Date().toISOString().slice(0, 10);
+  const date = c.req.query('date');
+
+  const conditions = [eq(appointmentServices.employeeId, employeeId)];
+  if (date) conditions.push(eq(appointments.date, date));
 
   const rows = await db
     .select({
@@ -34,6 +38,7 @@ employeeRoutes.get('/appointments', async (c) => {
       clientName: clients.name,
       serviceId: services.id,
       serviceName: services.name,
+      price: services.price,
       startTime: appointmentServices.startTime,
       endTime: appointmentServices.endTime,
     })
@@ -41,32 +46,86 @@ employeeRoutes.get('/appointments', async (c) => {
     .innerJoin(appointments, eq(appointmentServices.appointmentId, appointments.id))
     .innerJoin(services, eq(appointmentServices.serviceId, services.id))
     .innerJoin(clients, eq(appointments.clientId, clients.id))
-    .where(and(
-      eq(appointmentServices.employeeId, employeeId),
-      eq(appointments.date, date),
-    ))
-    .orderBy(appointmentServices.startTime);
+    .where(and(...conditions))
+    .orderBy(appointments.date, appointmentServices.startTime);
 
   return c.json({ appointments: rows });
 });
 
-employeeRoutes.patch('/appointments/:id/complete', async (c) => {
+employeeRoutes.patch('/appointments/:id/status', zValidator('json', z.object({ status: z.enum(['new', 'confirmed', 'cancelled', 'completed']) })), async (c) => {
   const db = c.get('db');
-  const employeeId = c.get('userId');
   const id = c.req.param('id');
+  const { status } = c.req.valid('json');
 
   const [appt] = await db
-    .select({ id: appointments.id, status: appointments.status })
+    .select({ id: appointments.id })
     .from(appointments)
-    .innerJoin(appointmentServices, eq(appointmentServices.appointmentId, appointments.id))
-    .where(and(eq(appointments.id, id), eq(appointmentServices.employeeId, employeeId)))
+    .where(eq(appointments.id, id))
     .limit(1);
 
   if (!appt) return c.json({ error: 'Not found' }, 404);
-  if (appt.status !== 'confirmed') return c.json({ error: 'Can only complete confirmed appointments' }, 422);
 
-  await db.update(appointments).set({ status: 'completed' }).where(eq(appointments.id, id));
+  await db.update(appointments).set({ status }).where(eq(appointments.id, id));
   return c.json({ ok: true });
+});
+
+// ─── Clients ──────────────────────────────────────────────────────────────────
+
+employeeRoutes.get('/clients', async (c) => {
+  const db = c.get('db');
+  const rows = await db
+    .select({ id: clients.id, name: clients.name, email: clients.email, phone: clients.phone, address: clients.address, profilePictureUrl: clients.profilePictureUrl, createdAt: clients.createdAt })
+    .from(clients)
+    .orderBy(clients.name);
+  return c.json({ clients: rows });
+});
+
+// ─── Services ─────────────────────────────────────────────────────────────────
+
+employeeRoutes.get('/services', async (c) => {
+  const db = c.get('db');
+  const rows = await db
+    .select({
+      id: services.id, name: services.name, type: services.type,
+      description: services.description, price: services.price,
+      durationMinutes: services.durationMinutes, isActive: services.isActive,
+      createdAt: services.createdAt,
+      roleIds: sql<string[]>`coalesce(array_agg(${serviceRoles.roleId}) filter (where ${serviceRoles.roleId} is not null), '{}')`,
+    })
+    .from(services)
+    .leftJoin(serviceRoles, eq(services.id, serviceRoles.serviceId))
+    .groupBy(services.id)
+    .orderBy(services.name);
+  return c.json({ services: rows });
+});
+
+// ─── Employees ────────────────────────────────────────────────────────────────
+
+employeeRoutes.get('/employees', async (c) => {
+  const db = c.get('db');
+  const emps = await db
+    .select({ id: employees.id, name: employees.name, email: employees.email, profilePictureUrl: employees.profilePictureUrl, isAdmin: employees.isAdmin, isActive: employees.isActive, createdAt: employees.createdAt })
+    .from(employees)
+    .orderBy(employees.name);
+
+  const result = await Promise.all(emps.map(async (emp) => {
+    const roleRows = await db
+      .select({ id: roles.id, name: roles.name })
+      .from(employeeRoles)
+      .innerJoin(roles, eq(employeeRoles.roleId, roles.id))
+      .where(eq(employeeRoles.employeeId, emp.id));
+    return { ...emp, roles: roleRows };
+  }));
+
+  return c.json({ employees: result });
+});
+
+// ─── Roles ────────────────────────────────────────────────────────────────────
+
+employeeRoutes.get('/roles', async (c) => {
+  const db = c.get('db');
+  const rows = await db.select().from(roles).orderBy(roles.name);
+  return c.json({ roles: rows });
 });
 
 // ─── PTO ──────────────────────────────────────────────────────────────────────
@@ -74,13 +133,34 @@ employeeRoutes.patch('/appointments/:id/complete', async (c) => {
 employeeRoutes.get('/pto', async (c) => {
   const db = c.get('db');
   const employeeId = c.get('userId');
+  const isAdmin = c.get('userRole') === 'admin';
+
+  const baseSelect = {
+    id: ptoRequests.id,
+    employeeId: ptoRequests.employeeId,
+    employeeName: employees.name,
+    date: ptoRequests.date,
+    type: ptoRequests.type,
+    status: ptoRequests.status,
+    note: ptoRequests.note,
+    createdAt: ptoRequests.createdAt,
+  };
+
+  if (isAdmin) {
+    const rows = await db
+      .select(baseSelect)
+      .from(ptoRequests)
+      .innerJoin(employees, eq(ptoRequests.employeeId, employees.id))
+      .orderBy(desc(ptoRequests.date));
+    return c.json({ pto: rows });
+  }
 
   const rows = await db
-    .select()
+    .select(baseSelect)
     .from(ptoRequests)
+    .innerJoin(employees, eq(ptoRequests.employeeId, employees.id))
     .where(eq(ptoRequests.employeeId, employeeId))
     .orderBy(desc(ptoRequests.date));
-
   return c.json({ pto: rows });
 });
 
@@ -120,6 +200,20 @@ employeeRoutes.delete('/pto/:id', async (c) => {
   if (pto.status !== 'pending') return c.json({ error: 'Can only delete pending requests' }, 422);
 
   await db.delete(ptoRequests).where(eq(ptoRequests.id, id));
+  return c.json({ ok: true });
+});
+
+employeeRoutes.patch('/pto/:id/status', zValidator('json', z.object({ status: z.enum(['approved', 'declined']) })), async (c) => {
+  if (c.get('userRole') !== 'admin') return c.json({ error: 'Forbidden' }, 403);
+
+  const db = c.get('db');
+  const id = c.req.param('id');
+  const { status } = c.req.valid('json');
+
+  const [pto] = await db.select({ id: ptoRequests.id }).from(ptoRequests).where(eq(ptoRequests.id, id)).limit(1);
+  if (!pto) return c.json({ error: 'Not found' }, 404);
+
+  await db.update(ptoRequests).set({ status }).where(eq(ptoRequests.id, id));
   return c.json({ ok: true });
 });
 
