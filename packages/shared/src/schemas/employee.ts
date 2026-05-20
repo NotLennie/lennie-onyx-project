@@ -11,6 +11,7 @@ export const employeeSchema = z.object({
   email: z.string().email(),
   profilePictureUrl: z.string().nullable(),
   isAdmin: z.boolean(),
+  isActive: z.boolean(),
   roles: z.array(roleSchema),
   createdAt: z.string(),
 });
@@ -33,7 +34,16 @@ export const updateEmployeeSchema = z.object({
   { message: 'currentPassword is required when setting a new password', path: ['currentPassword'] }
 );
 
+export const adminUpdateEmployeeSchema = z.object({
+  name: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  isAdmin: z.boolean().optional(),
+  isActive: z.boolean().optional(),
+  roleIds: z.array(z.string().uuid()).optional(),
+});
+
 export type Role = z.infer<typeof roleSchema>;
 export type Employee = z.infer<typeof employeeSchema>;
 export type CreateEmployeeInput = z.infer<typeof createEmployeeSchema>;
 export type UpdateEmployeeInput = z.infer<typeof updateEmployeeSchema>;
+export type AdminUpdateEmployeeInput = z.infer<typeof adminUpdateEmployeeSchema>;
