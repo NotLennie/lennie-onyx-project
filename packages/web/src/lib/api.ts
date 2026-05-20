@@ -42,15 +42,16 @@ export type SessionUser = {
   role: 'client' | 'employee' | 'admin';
 };
 
-export type ClientRow = { id: string; name: string; email: string; profilePictureUrl: string | null; createdAt: string };
+export type ClientRow = { id: string; name: string; email: string; phone: string | null; address: string | null; profilePictureUrl: string | null; createdAt: string };
 
 export type AppointmentRow = {
   appointmentId: string;
   date: string;
-  status: 'confirmed' | 'cancelled' | 'completed';
+  status: 'new' | 'confirmed' | 'cancelled' | 'completed';
   clientName: string;
   serviceId: string;
   serviceName: string;
+  price: string;
   startTime: string;
   endTime: string;
 };
@@ -58,7 +59,7 @@ export type AppointmentRow = {
 export type AdminAppointmentRow = {
   id: string;
   date: string;
-  status: 'confirmed' | 'cancelled' | 'completed';
+  status: 'new' | 'confirmed' | 'cancelled' | 'completed';
   clientName: string;
   createdAt: string;
   services: { id: string; serviceName: string; employeeName: string; startTime: string; endTime: string }[];
@@ -112,8 +113,8 @@ export const api = {
     appointments: {
       list: (date?: string) =>
         request<{ appointments: AppointmentRow[] }>(`/api/employee/appointments${date ? `?date=${date}` : ''}`),
-      complete: (id: string) =>
-        request<{ ok: boolean }>(`/api/employee/appointments/${id}/complete`, { method: 'PATCH' }),
+      updateStatus: (id: string, status: 'new' | 'confirmed' | 'cancelled' | 'completed') =>
+        request<{ ok: boolean }>(`/api/employee/appointments/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
     },
     pto: {
       list: () =>
@@ -122,6 +123,8 @@ export const api = {
         request<{ pto: PtoRequest }>('/api/employee/pto', { method: 'POST', body: JSON.stringify(input) }),
       delete: (id: string) =>
         request<{ ok: boolean }>(`/api/employee/pto/${id}`, { method: 'DELETE' }),
+      updateStatus: (id: string, status: 'approved' | 'declined') =>
+        request<{ ok: boolean }>(`/api/employee/pto/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
     },
     profile: {
       get: () =>
@@ -134,6 +137,22 @@ export const api = {
         return requestForm<{ url: string }>('/api/employee/profile/picture', form);
       },
     },
+    clients: {
+      list: () =>
+        request<{ clients: ClientRow[] }>('/api/employee/clients'),
+    },
+    services: {
+      list: () =>
+        request<{ services: Service[] }>('/api/employee/services'),
+    },
+    employees: {
+      list: () =>
+        request<{ employees: Employee[] }>('/api/employee/employees'),
+    },
+    roles: {
+      list: () =>
+        request<{ roles: { id: string; name: string }[] }>('/api/employee/roles'),
+    },
   },
   admin: {
     clients: {
@@ -143,7 +162,7 @@ export const api = {
     appointments: {
       list: (date?: string) =>
         request<{ appointments: AdminAppointmentRow[] }>(`/api/admin/appointments${date ? `?date=${date}` : ''}`),
-      updateStatus: (id: string, status: 'confirmed' | 'cancelled' | 'completed') =>
+      updateStatus: (id: string, status: 'new' | 'confirmed' | 'cancelled' | 'completed') =>
         request<{ ok: boolean }>(`/api/admin/appointments/${id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) }),
     },
     services: {
@@ -151,18 +170,16 @@ export const api = {
         request<{ services: Service[] }>('/api/admin/services'),
       create: (input: CreateServiceInput) =>
         request<{ service: Service }>('/api/admin/services', { method: 'POST', body: JSON.stringify(input) }),
-      update: (id: string, input: Partial<CreateServiceInput>) =>
+      update: (id: string, input: Partial<CreateServiceInput> & { isActive?: boolean }) =>
         request<{ service: Service }>(`/api/admin/services/${id}`, { method: 'PUT', body: JSON.stringify(input) }),
-      delete: (id: string) =>
-        request<{ ok: boolean }>(`/api/admin/services/${id}`, { method: 'DELETE' }),
     },
     employees: {
       list: () =>
         request<{ employees: Employee[] }>('/api/admin/employees'),
       create: (input: CreateEmployeeInput) =>
         request<{ employee: Pick<Employee, 'id' | 'name' | 'email' | 'isAdmin'> }>('/api/admin/employees', { method: 'POST', body: JSON.stringify(input) }),
-      delete: (id: string) =>
-        request<{ ok: boolean }>(`/api/admin/employees/${id}`, { method: 'DELETE' }),
+      update: (id: string, input: { name?: string; email?: string; isAdmin?: boolean; isActive?: boolean; roleIds?: string[] }) =>
+        request<{ ok: boolean }>(`/api/admin/employees/${id}`, { method: 'PATCH', body: JSON.stringify(input) }),
     },
     roles: {
       list: () =>
