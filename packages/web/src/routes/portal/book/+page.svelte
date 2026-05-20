@@ -191,7 +191,7 @@
 
   // Cell style helper
   function cellStyle(state: CellState): string {
-    const base = 'text-align:center;font-size:9px;padding:6px 2px;';
+    const base = 'text-align:center;font-size:11px;padding:6px 2px;';
     if (state === 'empty') return base;
     if (state === 'past') return base + 'color:rgba(255,255,255,0.15);';
     if (state === 'today') return base + 'color:rgba(255,255,255,0.3);border:1px solid #555;';
@@ -203,10 +203,10 @@
 </script>
 
 
-<div style="max-width:560px;">
+<div style="max-width:640px;">
   <!-- Header -->
-  <div style="color:rgba(255,255,255,0.4);font-size:8px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:4px;">Client Portal</div>
-  <div style="color:white;font-size:20px;font-family:serif;font-weight:300;letter-spacing:0.05em;margin-bottom:16px;">BOOK APPOINTMENT</div>
+  <div style="color:rgba(255,255,255,0.4);font-size:11px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:4px;">Client Portal</div>
+  <div style="color:white;font-size:28px;font-family:Georgia,serif;font-weight:300;letter-spacing:0.05em;margin-bottom:16px;">BOOK APPOINTMENT</div>
 
   <!-- Step indicator -->
   <div style="display:flex;gap:4px;margin-bottom:6px;">
@@ -214,12 +214,12 @@
       <div style="height:2px;flex:1;{step >= s ? 'background:var(--color-gold);' : 'background:var(--color-border);'}"></div>
     {/each}
   </div>
-  <div style="color:rgba(255,255,255,0.25);font-size:8px;letter-spacing:0.1em;margin-bottom:20px;">
+  <div style="color:rgba(255,255,255,0.25);font-size:10px;letter-spacing:0.1em;margin-bottom:20px;">
     Step {step} of 4{selectedService ? ` — ${selectedService.name} · ${selectedService.durationMinutes} min · $${selectedService.price}` : ''}
   </div>
 
   {#if error}
-    <div role="alert" style="margin-bottom:12px;padding:10px 14px;font-size:10px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">
+    <div role="alert" style="margin-bottom:12px;padding:10px 14px;font-size:13px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">
       {error}
     </div>
   {/if}
@@ -227,7 +227,7 @@
   <!-- Step 1: Choose a Service -->
   {#if step >= 1}
     <section style="margin-bottom:20px;">
-      <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Choose a Service</div>
+      <div style="color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Choose a Service</div>
       {#each data.services as svc}
         <button
           onclick={() => selectService(svc)}
@@ -237,14 +237,14 @@
               : 'background:var(--color-surface);border:1px solid var(--color-border);'}"
         >
           <div>
-            <div style="color:white;font-size:11px;font-weight:500;margin-bottom:2px;">{svc.name}</div>
+            <div style="color:white;font-size:14px;font-weight:500;margin-bottom:2px;">{svc.name}</div>
             {#if svc.description}
-              <div style="color:rgba(255,255,255,0.4);font-size:9px;">{svc.description}</div>
+              <div style="color:rgba(255,255,255,0.4);font-size:12px;">{svc.description}</div>
             {/if}
           </div>
           <div style="text-align:right;flex-shrink:0;margin-left:16px;">
-            <div style="color:var(--color-gold);font-size:11px;font-weight:600;">${svc.price}</div>
-            <div style="color:rgba(255,255,255,0.3);font-size:9px;">{svc.durationMinutes} min</div>
+            <div style="color:var(--color-gold);font-size:14px;font-weight:600;">${svc.price}</div>
+            <div style="color:rgba(255,255,255,0.3);font-size:12px;">{svc.durationMinutes} min</div>
           </div>
         </button>
       {/each}
@@ -254,7 +254,7 @@
   <!-- Step 2: Calendar date picker + time slots -->
   {#if step >= 2 && selectedService}
     <section style="margin-bottom:20px;">
-      <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Choose a Date</div>
+      <div style="color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Choose a Date</div>
 
       <!-- Calendar -->
       <div style="background:var(--color-surface);border:1px solid var(--color-border);padding:14px;margin-bottom:16px;max-width:290px;">
@@ -265,7 +265,7 @@
             disabled={!canGoPrev}
             style="background:none;border:none;cursor:{canGoPrev ? 'pointer' : 'default'};color:{canGoPrev ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)'};font-size:14px;padding:0 4px;"
           >‹</button>
-          <div style="color:white;font-size:10px;letter-spacing:0.15em;">{monthName}</div>
+          <div style="color:white;font-size:11px;letter-spacing:0.15em;">{monthName}</div>
           <button
             onclick={nextMonth}
             disabled={!canGoNext}
@@ -276,7 +276,7 @@
         <!-- Day headers -->
         <div class="calendar-grid" style="margin-bottom:4px;">
           {#each ['Su','Mo','Tu','We','Th','Fr','Sa'] as dow, i}
-            <div style="text-align:center;font-size:8px;letter-spacing:0.08em;padding:3px 0;
+            <div style="text-align:center;font-size:10px;letter-spacing:0.08em;padding:3px 0;
               {i === 3 ? 'color:rgba(255,255,255,0.2);text-decoration:line-through;' : 'color:var(--color-gold);'}">
               {dow}
             </div>
@@ -301,29 +301,29 @@
         <div style="border-top:1px solid var(--color-border);margin-top:10px;padding-top:8px;display:flex;gap:14px;flex-wrap:wrap;">
           <div style="display:flex;align-items:center;gap:4px;">
             <div style="width:8px;height:8px;background:var(--color-gold);"></div>
-            <div style="color:rgba(255,255,255,0.3);font-size:8px;">Selected</div>
+            <div style="color:rgba(255,255,255,0.3);font-size:10px;">Selected</div>
           </div>
           <div style="display:flex;align-items:center;gap:4px;">
             <div style="width:8px;height:8px;border:1px solid #555;"></div>
-            <div style="color:rgba(255,255,255,0.3);font-size:8px;">Today</div>
+            <div style="color:rgba(255,255,255,0.3);font-size:10px;">Today</div>
           </div>
           <div style="display:flex;align-items:center;gap:4px;">
             <div style="width:8px;height:8px;background:rgba(255,255,255,0.05);"></div>
-            <div style="color:rgba(255,255,255,0.3);font-size:8px;">Unavailable</div>
+            <div style="color:rgba(255,255,255,0.3);font-size:10px;">Unavailable</div>
           </div>
         </div>
       </div>
 
       <!-- Time slots — shown after date selected -->
       {#if selectedDate}
-        <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:8px;">
+        <div style="color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:8px;">
           Available Times — {selectedDateLabel}
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:4px;">
           {#each timeSlots as t}
             <button
               onclick={() => selectTime(t)}
-              style="padding:6px 12px;font-size:9px;border:none;cursor:pointer;
+              style="padding:6px 12px;font-size:12px;border:none;cursor:pointer;
                 {selectedTime === t
                   ? 'background:var(--color-gold);color:#000;font-weight:600;'
                   : 'background:var(--color-surface);border:1px solid var(--color-border);color:rgba(255,255,255,0.5);'}"
@@ -337,9 +337,9 @@
   <!-- Step 3: Choose a Stylist -->
   {#if step >= 3 && selectedTime}
     <section style="margin-bottom:20px;">
-      <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Choose a Stylist</div>
+      <div style="color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Choose a Stylist</div>
       {#if loadingEmployees}
-        <div style="color:rgba(255,255,255,0.3);font-size:10px;">Checking availability…</div>
+        <div style="color:rgba(255,255,255,0.3);font-size:13px;">Checking availability…</div>
       {:else}
         {#each availableEmployees as emp}
           <button
@@ -355,7 +355,7 @@
                 : 'background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);'}">
               {emp.name.charAt(0).toUpperCase()}
             </div>
-            <span style="color:{selectedEmployee?.id === emp.id ? 'white' : 'rgba(255,255,255,0.6)'};font-size:11px;">{emp.name}</span>
+            <span style="color:{selectedEmployee?.id === emp.id ? 'white' : 'rgba(255,255,255,0.6)'};font-size:14px;">{emp.name}</span>
           </button>
         {/each}
       {/if}
@@ -365,35 +365,35 @@
   <!-- Step 4: Confirm -->
   {#if step >= 4 && selectedEmployee}
     <section>
-      <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Confirm Booking</div>
-      <div style="background:var(--color-surface);border:1px solid var(--color-border);border-top:2px solid var(--color-gold);padding:14px;margin-bottom:12px;">
+      <div style="color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Confirm Booking</div>
+      <div style="background:var(--color-surface);border:1px solid var(--color-border);border-top:2px solid var(--color-gold);padding:18px;margin-bottom:12px;">
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
           <div>
-            <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Service</div>
-            <div style="color:white;font-size:10px;">{selectedService?.name}</div>
+            <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Service</div>
+            <div style="color:white;font-size:13px;">{selectedService?.name}</div>
           </div>
           <div>
-            <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Stylist</div>
-            <div style="color:white;font-size:10px;">{selectedEmployee?.name}</div>
+            <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Stylist</div>
+            <div style="color:white;font-size:13px;">{selectedEmployee?.name}</div>
           </div>
           <div>
-            <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Date</div>
-            <div style="color:white;font-size:10px;">{selectedDateLabel}</div>
+            <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Date</div>
+            <div style="color:white;font-size:13px;">{selectedDateLabel}</div>
           </div>
           <div>
-            <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Time</div>
-            <div style="color:white;font-size:10px;">{selectedTime}</div>
+            <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Time</div>
+            <div style="color:white;font-size:13px;">{selectedTime}</div>
           </div>
         </div>
         <div style="border-top:1px solid var(--color-border);padding-top:10px;display:flex;justify-content:space-between;align-items:center;">
-          <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Total</div>
-          <div style="color:var(--color-gold);font-size:14px;font-weight:600;">${selectedService?.price}</div>
+          <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;">Total</div>
+          <div style="color:var(--color-gold);font-size:16px;font-weight:600;">${selectedService?.price}</div>
         </div>
       </div>
       <button
         onclick={submit}
         disabled={submitting}
-        style="width:100%;background:var(--color-gold);border:none;color:#000;padding:12px;font-size:9px;letter-spacing:0.25em;text-transform:uppercase;font-weight:600;cursor:pointer;"
+        style="width:100%;background:var(--color-gold);border:none;color:#000;padding:12px 28px;font-size:12px;letter-spacing:0.25em;text-transform:uppercase;font-weight:600;cursor:pointer;"
       >
         {submitting ? 'Booking…' : 'Confirm Booking'}
       </button>

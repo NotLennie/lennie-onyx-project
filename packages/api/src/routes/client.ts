@@ -163,7 +163,7 @@ clientRoutes.get('/availability', async (c) => {
 clientRoutes.get('/profile', async (c) => {
   const db = c.get('db');
   const [client] = await db
-    .select({ id: clients.id, name: clients.name, email: clients.email, profilePictureUrl: clients.profilePictureUrl, createdAt: clients.createdAt })
+    .select({ id: clients.id, name: clients.name, email: clients.email, phone: clients.phone, address: clients.address, profilePictureUrl: clients.profilePictureUrl, createdAt: clients.createdAt })
     .from(clients).where(eq(clients.id, c.get('userId'))).limit(1);
   if (!client) return c.json({ error: 'Not found' }, 404);
   return c.json({ user: client });
@@ -180,6 +180,8 @@ clientRoutes.put('/profile', zValidator('json', updateClientSchema), async (c) =
   const updates: Partial<typeof clients.$inferInsert> = {};
 
   if (input.name) updates.name = input.name;
+  if (input.phone !== undefined) updates.phone = input.phone;
+  if (input.address !== undefined) updates.address = input.address;
 
   if (input.email && input.email !== existing.email) {
     if (!input.currentPassword) return c.json({ error: 'Password required to change email' }, 422);
@@ -200,7 +202,7 @@ clientRoutes.put('/profile', zValidator('json', updateClientSchema), async (c) =
 
   await db.update(clients).set(updates).where(eq(clients.id, userId));
   const [updated] = await db
-    .select({ id: clients.id, name: clients.name, email: clients.email, profilePictureUrl: clients.profilePictureUrl })
+    .select({ id: clients.id, name: clients.name, email: clients.email, phone: clients.phone, address: clients.address, profilePictureUrl: clients.profilePictureUrl })
     .from(clients).where(eq(clients.id, userId)).limit(1);
 
   return c.json({ user: updated });

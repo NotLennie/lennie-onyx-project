@@ -10,8 +10,8 @@
   let firstName = $state(nameParts[0] ?? '');
   let lastName = $state(nameParts.slice(1).join(' '));
   let email = $state(data.profile?.email ?? '');
-  let phone = $state('');       // UI only — not in API schema yet
-  let address = $state('');     // UI only — not in API schema yet
+  let phone = $state(data.profile?.phone ?? '');
+  let address = $state(data.profile?.address ?? '');
 
   let currentPassword = $state('');
   let newPassword = $state('');
@@ -38,6 +38,8 @@
         updates.email = email;
         if (currentPassword) updates.currentPassword = currentPassword;
       }
+      if (phone !== (data.profile?.phone ?? '')) updates.phone = phone;
+      if (address !== (data.profile?.address ?? '')) updates.address = address;
       if (Object.keys(updates).length === 0) {
         saveError = 'No changes to save.';
         return;
@@ -91,40 +93,37 @@
 </script>
 
 
-<div style="max-width:520px;">
-  <!-- Header -->
-  <div style="color:rgba(255,255,255,0.4);font-size:8px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:4px;">Client Portal</div>
-  <div style="color:white;font-size:20px;font-family:serif;font-weight:300;letter-spacing:0.05em;margin-bottom:20px;">PROFILE</div>
+<div style="max-width:600px;">
+  <div style="color:rgba(255,255,255,0.4);font-size:11px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:6px;">Client Portal</div>
+  <div style="color:white;font-size:28px;font-family:Georgia,serif;font-weight:300;letter-spacing:0.05em;margin-bottom:24px;">PROFILE</div>
 
-  <!-- Photo + upload -->
-  <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #2a2a2a;">
-    <div style="width:56px;height:56px;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);">
+  <div style="display:flex;align-items:center;gap:18px;margin-bottom:28px;padding-bottom:24px;border-bottom:1px solid #2a2a2a;">
+    <div style="width:64px;height:64px;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);">
       {#if data.profile?.profilePictureUrl}
         <img src={data.profile.profilePictureUrl} alt="Profile" style="width:100%;height:100%;object-fit:cover;" />
       {:else}
-        <img src="/icons/expert_stylist.png" alt="" style="width:34px;height:34px;opacity:0.85;" />
+        <img src="/icons/expert_stylist.png" alt="" style="width:38px;height:38px;opacity:0.85;" />
       {/if}
     </div>
     <div>
-      <div style="color:white;font-size:11px;font-weight:500;margin-bottom:6px;">{data.profile?.name ?? ''}</div>
-      <label style="cursor:pointer;display:inline-block;background:transparent;border:1px solid var(--color-border);color:rgba(255,255,255,0.45);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;padding:5px 12px;">
+      <div style="color:white;font-size:14px;font-weight:500;margin-bottom:8px;">{data.profile?.name ?? ''}</div>
+      <label style="cursor:pointer;display:inline-block;background:transparent;border:1px solid var(--color-border);color:rgba(255,255,255,0.45);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;padding:7px 16px;">
         {uploadingPicture ? 'Uploading…' : 'Upload Photo'}
         <input type="file" accept="image/*" style="display:none;" onchange={handlePictureChange} disabled={uploadingPicture} />
       </label>
       {#if pictureError}
-        <div role="alert" style="color:#f87171;font-size:9px;margin-top:4px;">{pictureError}</div>
+        <div role="alert" style="color:#f87171;font-size:11px;margin-top:6px;">{pictureError}</div>
       {/if}
     </div>
   </div>
 
-  <!-- Personal Details -->
-  <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:12px;">Personal Details</div>
+  <div style="color:rgba(255,255,255,0.4);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:14px;">Personal Details</div>
 
   {#if saveError}
-    <div role="alert" style="margin-bottom:10px;padding:8px 12px;font-size:10px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{saveError}</div>
+    <div role="alert" style="margin-bottom:12px;padding:10px 14px;font-size:13px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{saveError}</div>
   {/if}
   {#if saveSuccess}
-    <div style="margin-bottom:10px;padding:8px 12px;font-size:10px;color:rgba(255,255,255,0.6);border:1px solid var(--color-border);">{saveSuccess}</div>
+    <div style="margin-bottom:12px;padding:10px 14px;font-size:13px;color:rgba(255,255,255,0.6);border:1px solid var(--color-border);">{saveSuccess}</div>
   {/if}
 
   <!-- First + Last name -->
@@ -160,20 +159,20 @@
   <button
     onclick={saveProfile}
     disabled={saving}
-    style="background:var(--color-gold);border:none;color:#000;padding:9px 20px;font-size:8px;letter-spacing:0.25em;text-transform:uppercase;font-weight:600;cursor:pointer;margin-bottom:24px;"
+    style="background:var(--color-gold);border:none;color:#000;padding:12px 28px;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;font-weight:600;cursor:pointer;margin-bottom:28px;"
   >
     {saving ? 'Saving…' : 'Save Changes'}
   </button>
 
   <!-- Change Password -->
   <div style="border-top:1px solid #2a2a2a;padding-top:20px;">
-    <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:12px;">Change Password</div>
+    <div style="color:rgba(255,255,255,0.4);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:14px;">Change Password</div>
 
     {#if passwordError}
-      <div role="alert" style="margin-bottom:10px;padding:8px 12px;font-size:10px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{passwordError}</div>
+      <div role="alert" style="margin-bottom:12px;padding:10px 14px;font-size:13px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{passwordError}</div>
     {/if}
     {#if passwordSuccess}
-      <div style="margin-bottom:10px;padding:8px 12px;font-size:10px;color:rgba(255,255,255,0.6);border:1px solid var(--color-border);">{passwordSuccess}</div>
+      <div style="margin-bottom:12px;padding:10px 14px;font-size:13px;color:rgba(255,255,255,0.6);border:1px solid var(--color-border);">{passwordSuccess}</div>
     {/if}
 
     <div style="margin-bottom:10px;">
@@ -194,7 +193,7 @@
     <button
       onclick={savePassword}
       disabled={saving}
-      style="background:transparent;border:1px solid var(--color-gold);color:var(--color-gold);padding:9px 20px;font-size:8px;letter-spacing:0.25em;text-transform:uppercase;font-weight:600;cursor:pointer;"
+      style="background:transparent;border:1px solid var(--color-gold);color:var(--color-gold);padding:12px 28px;font-size:11px;letter-spacing:0.25em;text-transform:uppercase;font-weight:600;cursor:pointer;"
     >
       {saving ? 'Saving…' : 'Update Password'}
     </button>
