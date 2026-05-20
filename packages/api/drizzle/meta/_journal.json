@@ -15,6 +15,13 @@
       "when": 1779284871021,
       "tag": "0001_brief_warlock",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779284871022,
+      "tag": "0002_use_new_enum",
+      "breakpoints": true
     }
   ]
 }
