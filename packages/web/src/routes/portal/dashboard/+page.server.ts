@@ -3,7 +3,7 @@ import type { PageServerLoad } from './$types';
 type AppointmentRow = {
   id: string;
   date: string;
-  status: 'confirmed' | 'cancelled' | 'completed';
+  status: 'new' | 'confirmed' | 'cancelled' | 'completed';
   createdAt: string;
   services: { serviceName: string; startTime: string; endTime: string; employeeName: string }[];
 };
@@ -16,7 +16,7 @@ export const load: PageServerLoad = async ({ fetch, platform }) => {
     const data = await res.json() as { appointments: AppointmentRow[] };
     const today = new Date().toISOString().slice(0, 10);
     const upcoming = data.appointments
-      .filter((a) => a.status === 'confirmed' && a.date >= today)
+      .filter((a) => (a.status === 'confirmed' || a.status === 'new') && a.date >= today)
       .slice(0, 1);
     const recentActivity = data.appointments
       .filter((a) => a.status === 'cancelled' || a.status === 'completed')

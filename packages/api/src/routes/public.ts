@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { Env } from '../types';
 import { services, serviceRoles } from '../db/schema';
-import { eq, sql } from 'drizzle-orm';
+import { eq, sql, and } from 'drizzle-orm';
 
 export const publicRoutes = new Hono<Env>();
 
@@ -20,6 +20,7 @@ publicRoutes.get('/services', async (c) => {
     })
     .from(services)
     .leftJoin(serviceRoles, eq(services.id, serviceRoles.serviceId))
+    .where(eq(services.isActive, true))
     .groupBy(services.id)
     .orderBy(services.name);
 
