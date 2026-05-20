@@ -9,7 +9,7 @@ export const serviceTypeEnum = pgEnum('service_type', [
 ]);
 
 export const appointmentStatusEnum = pgEnum('appointment_status', [
-  'confirmed', 'cancelled', 'completed',
+  'new', 'confirmed', 'cancelled', 'completed',
 ]);
 
 export const ptoTypeEnum = pgEnum('pto_type', [
@@ -26,6 +26,8 @@ export const clients = pgTable('clients', {
   email: text('email').unique().notNull(),
   passwordHash: text('password_hash').notNull(),
   profilePictureUrl: text('profile_picture_url'),
+  phone: text('phone'),
+  address: text('address'),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -36,6 +38,7 @@ export const employees = pgTable('employees', {
   passwordHash: text('password_hash').notNull(),
   profilePictureUrl: text('profile_picture_url'),
   isAdmin: boolean('is_admin').default(false).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -56,6 +59,7 @@ export const services = pgTable('services', {
   description: text('description'),
   price: numeric('price', { precision: 10, scale: 2 }).notNull(),
   durationMinutes: integer('duration_minutes').notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
@@ -78,7 +82,7 @@ export const appointments = pgTable('appointments', {
   id: uuid('id').primaryKey().defaultRandom(),
   clientId: uuid('client_id').notNull().references(() => clients.id, { onDelete: 'cascade' }),
   date: date('date').notNull(),
-  status: appointmentStatusEnum('status').default('confirmed').notNull(),
+  status: appointmentStatusEnum('status').default('new').notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
 });
 
