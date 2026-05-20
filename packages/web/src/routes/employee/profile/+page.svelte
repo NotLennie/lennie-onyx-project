@@ -5,14 +5,22 @@
 
   let { data } = $props<{ data: PageData }>();
 
-  let name = $state(data.profile?.name ?? '');
+  const nameParts = (data.profile?.name ?? '').split(' ');
+  let firstName = $state(nameParts[0] ?? '');
+  let lastName = $state(nameParts.slice(1).join(' '));
   let email = $state(data.profile?.email ?? '');
+  let phone = $state('');
+  let address = $state('');
+
   let currentPassword = $state('');
   let newPassword = $state('');
+  let confirmPassword = $state('');
 
   let saving = $state(false);
   let saveError = $state('');
   let saveSuccess = $state('');
+  let passwordError = $state('');
+  let passwordSuccess = $state('');
 
   let uploadingPicture = $state(false);
   let pictureError = $state('');
@@ -22,21 +30,19 @@
     saveError = '';
     saveSuccess = '';
     try {
+      const fullName = [firstName, lastName].filter(Boolean).join(' ');
       const updates: Record<string, string> = {};
-      if (name !== data.profile?.name) updates.name = name;
+      if (fullName !== data.profile?.name) updates.name = fullName;
       if (email !== data.profile?.email) {
         updates.email = email;
-        updates.currentPassword = currentPassword;
+        if (currentPassword) updates.currentPassword = currentPassword;
       }
-      if (newPassword) {
-        updates.newPassword = newPassword;
-        updates.currentPassword = currentPassword;
+      if (Object.keys(updates).length === 0) {
+        saveError = 'No changes to save.';
+        return;
       }
-      if (Object.keys(updates).length === 0) { saveError = 'No changes to save.'; return; }
       await api.employee.profile.update(updates);
       saveSuccess = 'Profile updated.';
-      currentPassword = '';
-      newPassword = '';
       await invalidateAll();
     } catch (e) {
       saveError = e instanceof Error ? e.message : 'Failed to save';
@@ -45,8 +51,30 @@
     }
   }
 
+  async function savePassword() {
+    passwordError = '';
+    passwordSuccess = '';
+    if (!currentPassword) { passwordError = 'Current password is required.'; return; }
+    if (!newPassword) { passwordError = 'New password is required.'; return; }
+    if (newPassword.length < 8) { passwordError = 'New password must be at least 8 characters.'; return; }
+    if (newPassword !== confirmPassword) { passwordError = 'Passwords do not match.'; return; }
+    saving = true;
+    try {
+      await api.employee.profile.update({ currentPassword, newPassword });
+      passwordSuccess = 'Password updated.';
+      currentPassword = '';
+      newPassword = '';
+      confirmPassword = '';
+    } catch (e) {
+      passwordError = e instanceof Error ? e.message : 'Failed to update password';
+    } finally {
+      saving = false;
+    }
+  }
+
   async function handlePictureChange(e: Event) {
-    const file = (e.target as HTMLInputElement).files?.[0];
+    const input = e.target as HTMLInputElement;
+    const file = input.files?.[0];
     if (!file) return;
     uploadingPicture = true;
     pictureError = '';
@@ -61,59 +89,100 @@
   }
 </script>
 
-<div class="max-w-lg">
-  <h1 class="text-3xl font-bold text-white mb-8">Profile</h1>
+<div style="max-width:520px;">
+  <div style="color:rgba(255,255,255,0.4);font-size:8px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:4px;">Employee Portal</div>
+  <div style="color:white;font-size:20px;font-family:Georgia,serif;font-weight:300;letter-spacing:0.05em;margin-bottom:20px;">PROFILE</div>
 
-  <div class="flex items-center gap-5 mb-8 p-5 rounded-xl" style="background-color: var(--color-surface); border: 1px solid var(--color-border)">
-    <div class="w-16 h-16 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center" style="background-color: rgba(201,168,76,0.2)">
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid #2a2a2a;">
+    <div style="width:56px;height:56px;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);">
       {#if data.profile?.profilePictureUrl}
-        <img src={data.profile.profilePictureUrl} alt="Profile" class="w-full h-full object-cover" />
+        <img src={data.profile.profilePictureUrl} alt="Profile" style="width:100%;height:100%;object-fit:cover;" />
       {:else}
-        <span class="text-2xl font-bold" style="color: var(--color-gold)">{data.profile?.name?.charAt(0)?.toUpperCase() ?? '?'}</span>
+        <span style="font-size:20px;font-weight:600;color:#C9A84C;">{data.profile?.name?.charAt(0)?.toUpperCase() ?? '?'}</span>
       {/if}
     </div>
     <div>
-      <p class="text-white font-medium">{data.profile?.name}</p>
-      {#if data.profile?.isAdmin}
-        <span class="text-xs px-1.5 py-0.5 rounded font-medium" style="background-color: rgba(201,168,76,0.2); color: var(--color-gold)">Admin</span>
-      {/if}
-      <label class="block mt-1 cursor-pointer text-sm font-medium" style="color: var(--color-gold)">
-        {uploadingPicture ? 'Uploading…' : 'Change photo'}
-        <input type="file" accept="image/*" class="hidden" onchange={handlePictureChange} disabled={uploadingPicture} />
+      <div style="color:white;font-size:11px;font-weight:500;margin-bottom:6px;">{data.profile?.name ?? ''}</div>
+      <label style="cursor:pointer;display:inline-block;background:transparent;border:1px solid var(--color-border);color:rgba(255,255,255,0.45);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;padding:5px 12px;">
+        {uploadingPicture ? 'Uploading…' : 'Upload Photo'}
+        <input type="file" accept="image/*" style="display:none;" onchange={handlePictureChange} disabled={uploadingPicture} />
       </label>
-      {#if pictureError}<p class="text-xs mt-1" style="color: #ef4444">{pictureError}</p>{/if}
+      {#if pictureError}
+        <div style="color:#f87171;font-size:9px;margin-top:4px;">{pictureError}</div>
+      {/if}
     </div>
   </div>
 
-  <div class="rounded-xl p-5" style="background-color: var(--color-surface); border: 1px solid var(--color-border)">
-    <h2 class="text-base font-semibold text-white mb-4">Account Details</h2>
+  <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:12px;">Personal Details</div>
 
-    {#if saveError}
-      <div class="mb-4 p-3 rounded-lg text-sm" style="background-color: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3)">{saveError}</div>
-    {/if}
-    {#if saveSuccess}
-      <div class="mb-4 p-3 rounded-lg text-sm" style="background-color: rgba(34,197,94,0.1); color: #22c55e; border: 1px solid rgba(34,197,94,0.3)">{saveSuccess}</div>
-    {/if}
+  {#if saveError}
+    <div style="margin-bottom:10px;padding:8px 12px;font-size:10px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{saveError}</div>
+  {/if}
+  {#if saveSuccess}
+    <div style="margin-bottom:10px;padding:8px 12px;font-size:10px;color:rgba(255,255,255,0.6);border:1px solid var(--color-border);">{saveSuccess}</div>
+  {/if}
 
-    <div class="space-y-4">
-      <div>
-        <label class="block text-sm font-medium text-gray-300 mb-1.5" for="name">Full Name</label>
-        <input id="name" type="text" bind:value={name} class="w-full px-4 py-2.5 rounded-lg text-white text-sm outline-none" style="background-color: var(--color-bg); border: 1px solid var(--color-border)" />
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-gray-300 mb-1.5" for="email">Email</label>
-        <input id="email" type="email" bind:value={email} class="w-full px-4 py-2.5 rounded-lg text-white text-sm outline-none" style="background-color: var(--color-bg); border: 1px solid var(--color-border)" />
-      </div>
-      <div style="border-top: 1px solid var(--color-border); padding-top: 1rem">
-        <p class="text-sm text-gray-400 mb-3">Change password — leave blank to keep current</p>
-        <div class="space-y-3">
-          <input type="password" bind:value={currentPassword} placeholder="Current password" class="w-full px-4 py-2.5 rounded-lg text-white text-sm outline-none" style="background-color: var(--color-bg); border: 1px solid var(--color-border)" />
-          <input type="password" bind:value={newPassword} placeholder="New password (min 8 chars)" class="w-full px-4 py-2.5 rounded-lg text-white text-sm outline-none" style="background-color: var(--color-bg); border: 1px solid var(--color-border)" />
-        </div>
-      </div>
-      <button onclick={saveProfile} disabled={saving} class="w-full py-2.5 rounded-lg font-semibold text-sm transition-opacity disabled:opacity-50" style="background-color: var(--color-gold); color: #1a1a1a">
-        {saving ? 'Saving…' : 'Save Changes'}
-      </button>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+    <div>
+      <label class="field-label" for="firstName">First Name</label>
+      <input id="firstName" type="text" bind:value={firstName} class="field-input" autocomplete="given-name" />
     </div>
+    <div>
+      <label class="field-label" for="lastName">Last Name</label>
+      <input id="lastName" type="text" bind:value={lastName} class="field-input" autocomplete="family-name" />
+    </div>
+  </div>
+
+  <div style="margin-bottom:10px;">
+    <label class="field-label" for="email">Email</label>
+    <input id="email" type="email" bind:value={email} class="field-input" autocomplete="email" />
+  </div>
+
+  <div style="margin-bottom:10px;">
+    <label class="field-label" for="phone">Phone</label>
+    <input id="phone" type="tel" bind:value={phone} class="field-input" autocomplete="tel" />
+  </div>
+
+  <div style="margin-bottom:16px;">
+    <label class="field-label" for="address">Address</label>
+    <input id="address" type="text" bind:value={address} class="field-input" autocomplete="street-address" />
+  </div>
+
+  <button onclick={saveProfile} disabled={saving}
+    style="background:var(--color-gold);border:none;color:#000;padding:9px 20px;font-size:8px;letter-spacing:0.25em;text-transform:uppercase;font-weight:600;cursor:pointer;margin-bottom:24px;"
+  >
+    {saving ? 'Saving…' : 'Save Changes'}
+  </button>
+
+  <div style="border-top:1px solid #2a2a2a;padding-top:20px;">
+    <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:12px;">Change Password</div>
+
+    {#if passwordError}
+      <div style="margin-bottom:10px;padding:8px 12px;font-size:10px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{passwordError}</div>
+    {/if}
+    {#if passwordSuccess}
+      <div style="margin-bottom:10px;padding:8px 12px;font-size:10px;color:rgba(255,255,255,0.6);border:1px solid var(--color-border);">{passwordSuccess}</div>
+    {/if}
+
+    <div style="margin-bottom:10px;">
+      <label class="field-label" for="currentPassword">Current Password</label>
+      <input id="currentPassword" type="password" bind:value={currentPassword} class="field-input" autocomplete="current-password" />
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+      <div>
+        <label class="field-label" for="newPassword">New Password</label>
+        <input id="newPassword" type="password" bind:value={newPassword} class="field-input" autocomplete="new-password" />
+      </div>
+      <div>
+        <label class="field-label" for="confirmPassword">Confirm Password</label>
+        <input id="confirmPassword" type="password" bind:value={confirmPassword} class="field-input" autocomplete="new-password" />
+      </div>
+    </div>
+
+    <button onclick={savePassword} disabled={saving}
+      style="background:transparent;border:1px solid var(--color-gold);color:var(--color-gold);padding:9px 20px;font-size:8px;letter-spacing:0.25em;text-transform:uppercase;font-weight:600;cursor:pointer;"
+    >
+      {saving ? 'Saving…' : 'Update Password'}
+    </button>
   </div>
 </div>

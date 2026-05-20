@@ -6,7 +6,7 @@
   type Appointment = {
     id: string;
     date: string;
-    status: 'confirmed' | 'cancelled' | 'completed';
+    status: 'new' | 'confirmed' | 'cancelled' | 'completed';
     createdAt: string;
     services: { id: string; serviceName: string; startTime: string; endTime: string; employeeName: string; price: string }[];
   };
@@ -21,16 +21,16 @@
   // View All filter state (only applied on Apply click)
   let filterFrom = $state('');
   let filterTo = $state('');
-  let filterStatus = $state<'all' | 'confirmed' | 'completed' | 'cancelled'>('all');
+  let filterStatus = $state<'all' | 'new' | 'confirmed' | 'completed' | 'cancelled'>('all');
   let appliedFrom = $state('');
   let appliedTo = $state('');
-  let appliedStatus = $state<'all' | 'confirmed' | 'completed' | 'cancelled'>('all');
+  let appliedStatus = $state<'all' | 'new' | 'confirmed' | 'completed' | 'cancelled'>('all');
 
   const today = new Date().toISOString().slice(0, 10);
 
   const upcoming = $derived(
     appointments
-      .filter((a) => a.status === 'confirmed' && a.date >= today)
+      .filter((a) => (a.status === 'confirmed' || a.status === 'new') && a.date >= today)
       .sort((a, b) => a.date.localeCompare(b.date))
   );
 
@@ -203,6 +203,7 @@
         style="background:var(--color-surface);border:1px solid var(--color-border);color:rgba(255,255,255,0.5);font-size:9px;padding:5px 8px;flex:1;min-width:80px;"
       >
         <option value="all">All</option>
+        <option value="new">New</option>
         <option value="confirmed">Confirmed</option>
         <option value="completed">Completed</option>
         <option value="cancelled">Cancelled</option>

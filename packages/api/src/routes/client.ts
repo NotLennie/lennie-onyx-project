@@ -79,7 +79,7 @@ clientRoutes.post('/appointments', zValidator('json', createAppointmentSchema), 
   }
 
   const [appt] = await db.insert(appointments)
-    .values({ clientId, date: input.date, status: 'confirmed' })
+    .values({ clientId, date: input.date, status: 'new' })
     .returning();
 
   for (const svcItem of input.services) {
