@@ -8,41 +8,51 @@
   const filtered = $derived.by(() => {
     if (!search.trim()) return data.clients;
     const q = search.toLowerCase();
-    return data.clients.filter((c) => c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q));
+    return data.clients.filter((c) =>
+      c.name.toLowerCase().includes(q) || c.email.toLowerCase().includes(q) || (c.phone && c.phone.includes(q))
+    );
   });
+
+  function formatDate(d: string) {
+    return new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  }
 </script>
 
-<div class="max-w-3xl">
-  <h1 class="text-3xl font-bold text-white mb-6">Clients</h1>
+<div>
+  <div style="color:rgba(255,255,255,0.4);font-size:8px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:4px;">Employee Portal</div>
+  <div style="color:white;font-size:20px;font-family:Georgia,serif;font-weight:300;letter-spacing:0.05em;margin-bottom:20px;">CLIENTS</div>
 
   <input
     type="search"
     bind:value={search}
-    placeholder="Search by name or email…"
-    class="w-full px-4 py-2.5 rounded-lg text-white text-sm outline-none mb-5"
-    style="background-color: var(--color-surface); border: 1px solid var(--color-border)"
+    placeholder="Search by name, email, or phone…"
+    style="width:100%;background:#242424;border:1px solid #333;color:white;font-size:10px;padding:8px 12px;margin-bottom:16px;box-sizing:border-box;"
   />
 
   {#if filtered.length === 0}
-    <div class="rounded-xl p-8 text-center" style="background-color: var(--color-surface); border: 1px solid var(--color-border)">
-      <p class="text-gray-400">{search ? 'No clients match your search.' : 'No clients yet.'}</p>
+    <div style="background:#242424;border:1px solid #333;padding:32px;text-align:center;color:rgba(255,255,255,0.3);font-size:10px;">
+      {search ? 'No clients match your search.' : 'No clients yet.'}
     </div>
   {:else}
-    <div class="space-y-2">
-      {#each filtered as client}
-        <div class="rounded-xl p-4 flex items-center gap-4" style="background-color: var(--color-surface); border: 1px solid var(--color-border)">
-          <div class="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm flex-shrink-0" style="background-color: rgba(201,168,76,0.2); color: var(--color-gold)">
-            {client.name.charAt(0).toUpperCase()}
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="font-medium text-white truncate">{client.name}</div>
-            <div class="text-sm text-gray-400 truncate">{client.email}</div>
-          </div>
-          <div class="text-xs text-gray-500 flex-shrink-0">
-            {new Date(client.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-          </div>
-        </div>
-      {/each}
+    <div style="display:grid;grid-template-columns:1.5fr 1.5fr 1fr 2fr 1fr;padding:8px 14px;border-bottom:1px solid #333;">
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Name</div>
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Email</div>
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Phone</div>
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Address</div>
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Joined</div>
     </div>
+
+    {#each filtered as client}
+      <div style="display:grid;grid-template-columns:1.5fr 1.5fr 1fr 2fr 1fr;padding:10px 14px;border-bottom:1px solid #2a2a2a;border-left:2px solid #C9A84C;align-items:center;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);color:#C9A84C;flex-shrink:0;">{client.name.charAt(0).toUpperCase()}</div>
+          <span style="color:white;font-size:10px;font-weight:500;">{client.name}</span>
+        </div>
+        <div style="color:rgba(255,255,255,0.5);font-size:10px;">{client.email}</div>
+        <div style="color:rgba(255,255,255,0.5);font-size:10px;">{client.phone ?? '—'}</div>
+        <div style="color:rgba(255,255,255,0.5);font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{client.address ?? '—'}</div>
+        <div style="color:rgba(255,255,255,0.35);font-size:9px;">{formatDate(client.createdAt)}</div>
+      </div>
+    {/each}
   {/if}
 </div>

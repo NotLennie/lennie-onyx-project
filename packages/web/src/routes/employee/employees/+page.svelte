@@ -4,6 +4,13 @@
   import { invalidateAll } from '$app/navigation';
 
   let { data } = $props<{ data: PageData }>();
+  const isAdmin = data.isAdmin;
+
+  let search = $state('');
+  let roleFilter = $state('all');
+  let accessFilter = $state('all');
+  let statusFilter = $state<'all' | 'active' | 'inactive'>('all');
+  let showCreate = $state(false);
 
   let newName = $state('');
   let newEmail = $state('');
@@ -12,13 +19,30 @@
   let newRoleIds = $state<string[]>([]);
   let submitting = $state(false);
   let submitError = $state('');
-  let deleting = $state<string | null>(null);
+
+  let editingCell = $state<{ id: string; field: string } | null>(null);
+  let editValue = $state('');
+  let saving = $state(false);
+
+  const filtered = $derived.by(() => {
+    let list = data.employees;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((e) => e.name.toLowerCase().includes(q) || e.email.toLowerCase().includes(q));
+    }
+    if (roleFilter !== 'all') list = list.filter((e) => e.roles.some((r) => r.id === roleFilter));
+    if (accessFilter === 'admin') list = list.filter((e) => e.isAdmin);
+    if (accessFilter === 'standard') list = list.filter((e) => !e.isAdmin);
+    if (statusFilter === 'active') list = list.filter((e) => e.isActive);
+    if (statusFilter === 'inactive') list = list.filter((e) => !e.isActive);
+    return list;
+  });
 
   function toggleRole(id: string) {
     newRoleIds = newRoleIds.includes(id) ? newRoleIds.filter((r) => r !== id) : [...newRoleIds, id];
   }
 
-  async function submit() {
+  async function createEmployee() {
     if (!newName.trim()) { submitError = 'Name is required'; return; }
     if (!newEmail.trim()) { submitError = 'Email is required'; return; }
     if (newPassword.length < 8) { submitError = 'Password must be at least 8 characters'; return; }
@@ -26,18 +50,9 @@
     submitting = true;
     submitError = '';
     try {
-      await api.admin.employees.create({
-        name: newName,
-        email: newEmail,
-        password: newPassword,
-        isAdmin: newIsAdmin,
-        roleIds: newRoleIds,
-      });
-      newName = '';
-      newEmail = '';
-      newPassword = '';
-      newIsAdmin = false;
-      newRoleIds = [];
+      await api.admin.employees.create({ name: newName, email: newEmail, password: newPassword, isAdmin: newIsAdmin, roleIds: newRoleIds });
+      newName = ''; newEmail = ''; newPassword = ''; newIsAdmin = false; newRoleIds = [];
+      showCreate = false;
       await invalidateAll();
     } catch (e) {
       submitError = e instanceof Error ? e.message : 'Failed to create employee';
@@ -46,125 +61,175 @@
     }
   }
 
-  async function deleteEmployee(id: string) {
-    deleting = id;
+  function startEdit(id: string, field: string, value: string) {
+    if (!isAdmin) return;
+    editingCell = { id, field };
+    editValue = value;
+  }
+
+  async function saveEdit(id: string, field: string) {
+    saving = true;
     try {
-      await api.admin.employees.delete(id);
+      const update: Record<string, any> = {};
+      if (field === 'name') update.name = editValue;
+      if (field === 'email') update.email = editValue;
+      await api.admin.employees.update(id, update);
+      editingCell = null;
       await invalidateAll();
     } catch (e) {
-      submitError = e instanceof Error ? e.message : 'Failed to delete employee';
+      submitError = e instanceof Error ? e.message : 'Failed to save';
     } finally {
-      deleting = null;
+      saving = false;
     }
+  }
+
+  async function toggleAccess(id: string, currentIsAdmin: boolean) {
+    try {
+      await api.admin.employees.update(id, { isAdmin: !currentIsAdmin });
+      await invalidateAll();
+    } catch (e) {
+      submitError = e instanceof Error ? e.message : 'Failed to update access';
+    }
+  }
+
+  async function toggleActive(id: string, currentActive: boolean) {
+    try {
+      await api.admin.employees.update(id, { isActive: !currentActive });
+      await invalidateAll();
+    } catch (e) {
+      submitError = e instanceof Error ? e.message : 'Failed to toggle status';
+    }
+  }
+
+  function handleKeydown(e: KeyboardEvent, id: string, field: string) {
+    if (e.key === 'Enter') saveEdit(id, field);
+    if (e.key === 'Escape') editingCell = null;
   }
 </script>
 
-<div class="max-w-3xl">
-  <h1 class="text-3xl font-bold text-white mb-8">Employees</h1>
+<div>
+  <div style="color:rgba(255,255,255,0.4);font-size:8px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:4px;">Employee Portal</div>
+  <div style="color:white;font-size:20px;font-family:Georgia,serif;font-weight:300;letter-spacing:0.05em;margin-bottom:20px;">EMPLOYEES</div>
 
-  <div class="rounded-xl p-5 mb-8" style="background-color: var(--color-surface); border: 1px solid var(--color-border)">
-    <h2 class="text-base font-semibold text-white mb-4">New Employee</h2>
-
-    {#if submitError}
-      <div class="mb-3 p-3 rounded-lg text-sm" style="background-color: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3)">
-        {submitError}
-      </div>
+  <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">
+    <input type="search" bind:value={search} placeholder="Search…" style="flex:1;min-width:120px;background:#242424;border:1px solid #333;color:white;font-size:10px;padding:7px 10px;" />
+    <select bind:value={roleFilter} style="background:#242424;border:1px solid #333;color:rgba(255,255,255,0.5);font-size:9px;padding:7px 10px;">
+      <option value="all">All Roles</option>
+      {#each data.roles as role}<option value={role.id}>{role.name}</option>{/each}
+    </select>
+    <select bind:value={accessFilter} style="background:#242424;border:1px solid #333;color:rgba(255,255,255,0.5);font-size:9px;padding:7px 10px;">
+      <option value="all">All Access</option>
+      <option value="admin">Admin</option>
+      <option value="standard">Standard</option>
+    </select>
+    <select bind:value={statusFilter} style="background:#242424;border:1px solid #333;color:rgba(255,255,255,0.5);font-size:9px;padding:7px 10px;">
+      <option value="all">All Statuses</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    </select>
+    {#if isAdmin}
+      <button onclick={() => showCreate = !showCreate} style="background:#C9A84C;border:none;color:#000;font-size:8px;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;padding:7px 14px;cursor:pointer;">
+        {showCreate ? '✕ Cancel' : '+ Create New Employee'}
+      </button>
     {/if}
-
-    <div class="grid grid-cols-2 gap-3 mb-3">
-      <input
-        type="text"
-        bind:value={newName}
-        placeholder="Full name"
-        class="px-3 py-2 rounded-lg text-white text-sm"
-        style="background-color: var(--color-bg); border: 1px solid var(--color-border)"
-      />
-      <input
-        type="email"
-        bind:value={newEmail}
-        placeholder="Email"
-        class="px-3 py-2 rounded-lg text-white text-sm"
-        style="background-color: var(--color-bg); border: 1px solid var(--color-border)"
-      />
-      <input
-        type="password"
-        bind:value={newPassword}
-        placeholder="Password (min 8 chars)"
-        class="px-3 py-2 rounded-lg text-white text-sm col-span-2"
-        style="background-color: var(--color-bg); border: 1px solid var(--color-border)"
-      />
-    </div>
-
-    <div class="mb-3">
-      <div class="text-xs text-gray-400 mb-2">Roles (select at least one)</div>
-      <div class="flex flex-wrap gap-2">
-        {#each data.roles as role}
-          <button
-            type="button"
-            onclick={() => toggleRole(role.id)}
-            class="px-3 py-1 rounded-full text-sm font-medium transition-colors"
-            style={newRoleIds.includes(role.id)
-              ? 'background-color: var(--color-gold); color: #1a1a1a'
-              : 'background-color: var(--color-bg); color: var(--color-gold); border: 1px solid var(--color-gold)'}
-          >
-            {role.name}
-          </button>
-        {/each}
-      </div>
-    </div>
-
-    <label class="flex items-center gap-2 mb-4 cursor-pointer select-none">
-      <input type="checkbox" bind:checked={newIsAdmin} class="w-4 h-4 rounded accent-yellow-500" />
-      <span class="text-sm text-gray-300">Grant admin access</span>
-    </label>
-
-    <button
-      onclick={submit}
-      disabled={submitting}
-      class="px-5 py-2 rounded-lg font-medium text-sm transition-opacity disabled:opacity-50"
-      style="background-color: var(--color-gold); color: #1a1a1a"
-    >
-      {submitting ? 'Creating…' : 'Create Employee'}
-    </button>
   </div>
 
-  {#if data.employees.length === 0}
-    <div class="rounded-xl p-8 text-center" style="background-color: var(--color-surface); border: 1px solid var(--color-border)">
-      <p class="text-gray-400">No employees yet.</p>
+  {#if submitError}
+    <div style="margin-bottom:12px;padding:10px 14px;font-size:10px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{submitError}</div>
+  {/if}
+
+  {#if showCreate && isAdmin}
+    <div style="background:#242424;border:1px solid #333;border-top:2px solid #C9A84C;padding:16px;margin-bottom:16px;">
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+        <input type="text" bind:value={newName} placeholder="Full name" style="flex:1;min-width:100px;background:transparent;border:1px solid #333;color:white;font-size:10px;padding:7px 10px;" />
+        <input type="email" bind:value={newEmail} placeholder="Email" style="flex:1;min-width:100px;background:transparent;border:1px solid #333;color:white;font-size:10px;padding:7px 10px;" />
+        <input type="password" bind:value={newPassword} placeholder="Password (min 8)" style="flex:1;min-width:100px;background:transparent;border:1px solid #333;color:white;font-size:10px;padding:7px 10px;" />
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
+        <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.1em;">Roles:</div>
+        {#each data.roles as role}
+          <button type="button" onclick={() => toggleRole(role.id)}
+            style="padding:4px 10px;font-size:9px;cursor:pointer;border:1px solid #C9A84C;
+              {newRoleIds.includes(role.id) ? 'background:#C9A84C;color:#000;' : 'background:transparent;color:#C9A84C;'}"
+          >{role.name}</button>
+        {/each}
+        <div style="width:1px;height:16px;background:#333;margin:0 4px;"></div>
+        <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.1em;">Access:</div>
+        <button type="button" onclick={() => newIsAdmin = false}
+          style="padding:4px 10px;font-size:9px;cursor:pointer;border:1px solid #C9A84C;
+            {!newIsAdmin ? 'background:#C9A84C;color:#000;' : 'background:transparent;color:#C9A84C;'}"
+        >Standard</button>
+        <button type="button" onclick={() => newIsAdmin = true}
+          style="padding:4px 10px;font-size:9px;cursor:pointer;border:1px solid #C9A84C;
+            {newIsAdmin ? 'background:#C9A84C;color:#000;' : 'background:transparent;color:#C9A84C;'}"
+        >Admin</button>
+      </div>
+      <button onclick={createEmployee} disabled={submitting} style="background:#C9A84C;border:none;color:#000;font-size:8px;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;padding:7px 14px;cursor:pointer;">
+        {submitting ? 'Creating…' : 'Create Employee'}
+      </button>
     </div>
+  {/if}
+
+  {#if filtered.length === 0}
+    <div style="background:#242424;border:1px solid #333;padding:32px;text-align:center;color:rgba(255,255,255,0.3);font-size:10px;">No employees found.</div>
   {:else}
-    <div class="space-y-2">
-      {#each data.employees as emp}
-        <div class="rounded-xl p-4 flex items-center gap-4" style="background-color: var(--color-surface); border: 1px solid var(--color-border)">
-          <div class="w-9 h-9 rounded-full flex items-center justify-center font-semibold text-sm flex-shrink-0" style="background-color: rgba(201,168,76,0.2); color: var(--color-gold)">
-            {emp.name.charAt(0).toUpperCase()}
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 mb-0.5">
-              <span class="font-medium text-white truncate">{emp.name}</span>
-              {#if emp.isAdmin}
-                <span class="text-xs px-2 py-0.5 rounded-full flex-shrink-0" style="background-color: rgba(201,168,76,0.15); color: var(--color-gold)">Admin</span>
-              {/if}
-            </div>
-            <div class="text-sm text-gray-400 truncate">{emp.email}</div>
-            {#if emp.roles.length > 0}
-              <div class="flex flex-wrap gap-1 mt-1">
-                {#each emp.roles as role}
-                  <span class="text-xs px-1.5 py-0.5 rounded" style="background-color: var(--color-bg); color: #9ca3af; border: 1px solid var(--color-border)">{role.name}</span>
-                {/each}
-              </div>
-            {/if}
-          </div>
-          <button
-            onclick={() => deleteEmployee(emp.id)}
-            disabled={deleting === emp.id}
-            class="text-sm px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
-            style="color: #ef4444; border: 1px solid rgba(239,68,68,0.3)"
-          >
-            {deleting === emp.id ? '…' : 'Delete'}
-          </button>
-        </div>
-      {/each}
+    <div style="display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 120px;padding:8px 14px;border-bottom:1px solid #333;">
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Name</div>
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Email</div>
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Role</div>
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Access</div>
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Status</div>
     </div>
+
+    {#each filtered as emp}
+      <div style="display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 120px;padding:10px 14px;border-bottom:1px solid #2a2a2a;border-left:2px solid #C9A84C;align-items:center;{emp.isActive ? '' : 'opacity:0.5;'}">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);color:#C9A84C;flex-shrink:0;">{emp.name.charAt(0).toUpperCase()}</div>
+          {#if editingCell?.id === emp.id && editingCell.field === 'name'}
+            <input type="text" bind:value={editValue} onblur={() => saveEdit(emp.id, 'name')} onkeydown={(e) => handleKeydown(e, emp.id, 'name')} autofocus style="background:transparent;border:1px solid #C9A84C;color:white;font-size:10px;padding:4px 6px;flex:1;" />
+          {:else}
+            <span onclick={() => startEdit(emp.id, 'name', emp.name)} style="color:white;font-size:10px;font-weight:500;{isAdmin ? 'cursor:pointer;' : ''}">{emp.name}</span>
+          {/if}
+        </div>
+        <div>
+          {#if editingCell?.id === emp.id && editingCell.field === 'email'}
+            <input type="email" bind:value={editValue} onblur={() => saveEdit(emp.id, 'email')} onkeydown={(e) => handleKeydown(e, emp.id, 'email')} autofocus style="background:transparent;border:1px solid #C9A84C;color:white;font-size:10px;padding:4px 6px;width:90%;box-sizing:border-box;" />
+          {:else}
+            <span onclick={() => startEdit(emp.id, 'email', emp.email)} style="color:rgba(255,255,255,0.5);font-size:10px;{isAdmin ? 'cursor:pointer;' : ''}">{emp.email}</span>
+          {/if}
+        </div>
+        <div style="display:flex;gap:3px;flex-wrap:wrap;">
+          {#each emp.roles as role}
+            <span style="font-size:8px;padding:1px 5px;border:1px solid #333;color:rgba(255,255,255,0.5);">{role.name}</span>
+          {/each}
+        </div>
+        <div>
+          {#if isAdmin}
+            <div style="display:flex;gap:2px;">
+              <button onclick={() => toggleAccess(emp.id, emp.isAdmin)}
+                style="padding:3px 8px;font-size:8px;cursor:pointer;border:1px solid #C9A84C;
+                  {emp.isAdmin ? 'background:#C9A84C;color:#000;' : 'background:transparent;color:#C9A84C;'}"
+              >Admin</button>
+              <button onclick={() => toggleAccess(emp.id, emp.isAdmin)}
+                style="padding:3px 8px;font-size:8px;cursor:pointer;border:1px solid #C9A84C;
+                  {!emp.isAdmin ? 'background:#C9A84C;color:#000;' : 'background:transparent;color:#C9A84C;'}"
+              >Standard</button>
+            </div>
+          {:else}
+            <span style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;{emp.isAdmin ? 'color:#C9A84C;background:rgba(201,168,76,0.15);' : 'color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.06);'}">{emp.isAdmin ? 'Admin' : 'Standard'}</span>
+          {/if}
+        </div>
+        <div>
+          {#if isAdmin}
+            <select value={emp.isActive ? 'active' : 'inactive'} onchange={() => toggleActive(emp.id, emp.isActive)} style="background:#242424;border:1px solid #333;color:{emp.isActive ? '#22c55e' : '#ef4444'};font-size:9px;padding:3px 6px;cursor:pointer;">
+              <option value="active" style="color:#22c55e">Active</option>
+              <option value="inactive" style="color:#ef4444">Inactive</option>
+            </select>
+          {:else}
+            <span style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;{emp.isActive ? 'color:#22c55e;background:rgba(34,197,94,0.15);' : 'color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.06);'}">{emp.isActive ? 'Active' : 'Inactive'}</span>
+          {/if}
+        </div>
+      </div>
+    {/each}
   {/if}
 </div>

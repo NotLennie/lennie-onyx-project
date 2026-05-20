@@ -12,6 +12,7 @@ export const serviceSchema = z.object({
   description: z.string().nullable(),
   price: z.string(),
   durationMinutes: z.number().int().positive(),
+  isActive: z.boolean(),
   roleIds: z.array(z.string().uuid()),
   createdAt: z.string(),
 });
@@ -25,6 +26,11 @@ export const createServiceSchema = z.object({
   roleIds: z.array(z.string().uuid()).min(1),
 });
 
+export const updateServiceSchema = createServiceSchema.partial().extend({
+  isActive: z.boolean().optional(),
+});
+
 export type ServiceType = z.infer<typeof serviceTypeEnum>;
 export type Service = z.infer<typeof serviceSchema>;
 export type CreateServiceInput = z.infer<typeof createServiceSchema>;
+export type UpdateServiceInput = z.infer<typeof updateServiceSchema>;

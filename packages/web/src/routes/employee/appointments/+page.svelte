@@ -1,91 +1,90 @@
 <script lang="ts">
   import type { PageData } from './$types';
   import { api } from '$lib/api';
-  import { goto, invalidateAll } from '$app/navigation';
+  import { invalidateAll } from '$app/navigation';
 
   let { data } = $props<{ data: PageData }>();
 
-  let completing = $state<string | null>(null);
-  let error = $state('');
-  let selectedDate = $state(data.date);
+  const today = new Date().toISOString().slice(0, 10);
+  const statuses = ['new', 'confirmed', 'cancelled', 'completed'] as const;
 
-  async function complete(appointmentId: string) {
-    completing = appointmentId;
+  let updating = $state<string | null>(null);
+  let error = $state('');
+
+  const sorted = $derived(
+    [...data.appointments].sort((a, b) => b.date.localeCompare(a.date) || a.startTime.localeCompare(b.startTime))
+  );
+
+  async function changeStatus(appointmentId: string, status: 'new' | 'confirmed' | 'cancelled' | 'completed') {
+    updating = appointmentId;
     error = '';
     try {
-      await api.employee.appointments.complete(appointmentId);
+      await api.employee.appointments.updateStatus(appointmentId, status);
       await invalidateAll();
     } catch (e) {
-      error = e instanceof Error ? e.message : 'Failed to complete';
+      error = e instanceof Error ? e.message : 'Failed to update';
     } finally {
-      completing = null;
+      updating = null;
     }
   }
 
-  function changeDate() {
-    goto(`/employee/appointments?date=${selectedDate}`, { invalidateAll: true });
+  function statusColor(status: string) {
+    if (status === 'completed') return '#22c55e';
+    if (status === 'cancelled') return '#ef4444';
+    return '#C9A84C';
   }
 
-  function statusStyle(status: string) {
-    if (status === 'confirmed') return 'background-color: rgba(201,168,76,0.15); color: var(--color-gold)';
-    if (status === 'completed') return 'background-color: rgba(34,197,94,0.15); color: #22c55e';
-    return 'background-color: rgba(239,68,68,0.15); color: #ef4444';
+  function formatDate(d: string) {
+    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
   }
 </script>
 
-<div class="max-w-3xl">
-  <h1 class="text-3xl font-bold text-white mb-6">Appointments</h1>
-
-  <div class="flex items-center gap-3 mb-6">
-    <input
-      type="date"
-      bind:value={selectedDate}
-      onchange={changeDate}
-      class="px-3 py-2 rounded-lg text-white text-sm"
-      style="background-color: var(--color-surface); border: 1px solid var(--color-border)"
-    />
-    <span class="text-gray-400 text-sm">
-      {new Date(data.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-    </span>
-  </div>
+<div>
+  <div style="color:rgba(255,255,255,0.4);font-size:8px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:4px;">Employee Portal</div>
+  <div style="color:white;font-size:20px;font-family:Georgia,serif;font-weight:300;letter-spacing:0.05em;margin-bottom:20px;">APPOINTMENTS</div>
 
   {#if error}
-    <div class="mb-4 p-3 rounded-lg text-sm" style="background-color: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.3)">
-      {error}
-    </div>
+    <div style="margin-bottom:12px;padding:10px 14px;font-size:10px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{error}</div>
   {/if}
 
-  {#if data.appointments.length === 0}
-    <div class="rounded-xl p-12 text-center" style="background-color: var(--color-surface); border: 1px solid var(--color-border)">
-      <p class="text-gray-400">No appointments on this date.</p>
-    </div>
+  {#if sorted.length === 0}
+    <div style="background:#242424;border:1px solid #333;padding:32px;text-align:center;color:rgba(255,255,255,0.3);font-size:10px;">No appointments found.</div>
   {:else}
-    <div class="space-y-3">
-      {#each data.appointments as appt}
-        <div class="rounded-xl p-5 flex items-center gap-4" style="background-color: var(--color-surface); border: 1px solid var(--color-border)">
-          <div class="text-center w-16 flex-shrink-0">
-            <div class="text-lg font-bold" style="color: var(--color-gold)">{appt.startTime}</div>
-            <div class="text-xs text-gray-500">{appt.endTime}</div>
-          </div>
-          <div class="flex-1">
-            <div class="flex items-center gap-2 mb-1">
-              <span class="font-semibold text-white">{appt.clientName}</span>
-              <span class="text-xs px-2 py-0.5 rounded-full" style={statusStyle(appt.status)}>{appt.status}</span>
-            </div>
-            <div class="text-sm text-gray-400">{appt.serviceName}</div>
-          </div>
-          {#if appt.status === 'confirmed'}
-            <button
-              onclick={() => complete(appt.appointmentId)}
-              disabled={completing === appt.appointmentId}
-              class="px-4 py-2 rounded-lg text-sm font-medium transition-opacity disabled:opacity-50 flex-shrink-0"
-              style="background-color: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid rgba(34,197,94,0.3)"
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;padding:8px 14px;border-bottom:1px solid #333;">
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Date & Time</div>
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Client</div>
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Service</div>
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Price</div>
+      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Status</div>
+    </div>
+
+    {#each sorted as appt}
+      {@const isPast = appt.date < today}
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;padding:10px 14px;border-bottom:1px solid #2a2a2a;border-left:2px solid #C9A84C;align-items:center;">
+        <div>
+          <div style="color:white;font-size:10px;font-weight:500;">{formatDate(appt.date)}</div>
+          <div style="color:rgba(255,255,255,0.35);font-size:9px;">{appt.startTime}–{appt.endTime}</div>
+        </div>
+        <div style="color:white;font-size:10px;">{appt.clientName}</div>
+        <div style="color:white;font-size:10px;">{appt.serviceName}</div>
+        <div style="color:rgba(255,255,255,0.5);font-size:10px;">${appt.price}</div>
+        <div>
+          {#if isPast}
+            <span style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;color:{statusColor(appt.status)};background:{statusColor(appt.status)}15;">{appt.status}</span>
+          {:else}
+            <select
+              value={appt.status}
+              onchange={(e) => changeStatus(appt.appointmentId, (e.target as HTMLSelectElement).value as any)}
+              disabled={updating === appt.appointmentId}
+              style="background:#242424;border:1px solid #333;color:{statusColor(appt.status)};font-size:9px;padding:3px 6px;cursor:pointer;"
             >
-              {completing === appt.appointmentId ? '…' : 'Complete'}
-            </button>
+              {#each statuses as s}
+                <option value={s} style="color:{statusColor(s)}">{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+              {/each}
+            </select>
           {/if}
         </div>
-      {/each}
-    </div>
+      </div>
+    {/each}
   {/if}
 </div>

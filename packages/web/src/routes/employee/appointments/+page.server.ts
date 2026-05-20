@@ -3,22 +3,22 @@ import type { PageServerLoad } from './$types';
 type AppointmentRow = {
   appointmentId: string;
   date: string;
-  status: 'confirmed' | 'cancelled' | 'completed';
+  status: 'new' | 'confirmed' | 'cancelled' | 'completed';
   clientName: string;
   serviceName: string;
+  price: string;
   startTime: string;
   endTime: string;
 };
 
-export const load: PageServerLoad = async ({ fetch, platform, url }) => {
+export const load: PageServerLoad = async ({ fetch, platform }) => {
   const API_BASE = platform?.env?.PUBLIC_API_URL ?? 'http://localhost:8787';
-  const date = url.searchParams.get('date') ?? new Date().toISOString().slice(0, 10);
   try {
-    const res = await fetch(`${API_BASE}/api/employee/appointments?date=${date}`);
-    if (!res.ok) return { appointments: [] as AppointmentRow[], date };
+    const res = await fetch(`${API_BASE}/api/employee/appointments`);
+    if (!res.ok) return { appointments: [] as AppointmentRow[] };
     const data = await res.json() as { appointments: AppointmentRow[] };
-    return { appointments: data.appointments, date };
+    return { appointments: data.appointments };
   } catch {
-    return { appointments: [] as AppointmentRow[], date };
+    return { appointments: [] as AppointmentRow[] };
   }
 };

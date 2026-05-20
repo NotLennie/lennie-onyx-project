@@ -8,7 +8,7 @@ import {
   roles, ptoRequests,
 } from '../db/schema';
 import { eq, and, sql, desc } from 'drizzle-orm';
-import { createServiceSchema, createEmployeeSchema } from '@project/shared';
+import { createServiceSchema, createEmployeeSchema, adminUpdateEmployeeSchema, updateServiceSchema } from '@project/shared';
 import { z } from 'zod';
 import { hashPassword } from '../auth/crypto';
 
@@ -25,7 +25,7 @@ adminRoutes.use('*', async (c, next) => {
 adminRoutes.get('/clients', async (c) => {
   const db = c.get('db');
   const rows = await db
-    .select({ id: clients.id, name: clients.name, email: clients.email, profilePictureUrl: clients.profilePictureUrl, createdAt: clients.createdAt })
+    .select({ id: clients.id, name: clients.name, email: clients.email, phone: clients.phone, address: clients.address, profilePictureUrl: clients.profilePictureUrl, createdAt: clients.createdAt })
     .from(clients)
     .orderBy(clients.name);
   return c.json({ clients: rows });
@@ -69,7 +69,7 @@ adminRoutes.get('/appointments', async (c) => {
   return c.json({ appointments: result });
 });
 
-adminRoutes.patch('/appointments/:id/status', zValidator('json', z.object({ status: z.enum(['confirmed', 'cancelled', 'completed']) })), async (c) => {
+adminRoutes.patch('/appointments/:id/status', zValidator('json', z.object({ status: z.enum(['new', 'confirmed', 'cancelled', 'completed']) })), async (c) => {
   const db = c.get('db');
   const id = c.req.param('id');
   const { status } = c.req.valid('json');
@@ -93,6 +93,7 @@ adminRoutes.get('/services', async (c) => {
       description: services.description,
       price: services.price,
       durationMinutes: services.durationMinutes,
+      isActive: services.isActive,
       createdAt: services.createdAt,
       roleIds: sql<string[]>`coalesce(array_agg(${serviceRoles.roleId}) filter (where ${serviceRoles.roleId} is not null), '{}')`,
     })
@@ -115,7 +116,7 @@ adminRoutes.post('/services', zValidator('json', createServiceSchema), async (c)
   return c.json({ service: svc }, 201);
 });
 
-adminRoutes.put('/services/:id', zValidator('json', createServiceSchema.partial()), async (c) => {
+adminRoutes.put('/services/:id', zValidator('json', updateServiceSchema), async (c) => {
   const db = c.get('db');
   const id = c.req.param('id');
   const { roleIds, ...rest } = c.req.valid('json');
@@ -137,7 +138,7 @@ adminRoutes.put('/services/:id', zValidator('json', createServiceSchema.partial(
   const [updated] = await db
     .select({
       id: services.id, name: services.name, type: services.type,
-      description: services.description, price: services.price, durationMinutes: services.durationMinutes,
+      description: services.description, price: services.price, durationMinutes: services.durationMinutes, isActive: services.isActive,
       roleIds: sql<string[]>`coalesce(array_agg(${serviceRoles.roleId}) filter (where ${serviceRoles.roleId} is not null), '{}')`,
     })
     .from(services).leftJoin(serviceRoles, eq(services.id, serviceRoles.serviceId))
@@ -146,21 +147,12 @@ adminRoutes.put('/services/:id', zValidator('json', createServiceSchema.partial(
   return c.json({ service: updated });
 });
 
-adminRoutes.delete('/services/:id', async (c) => {
-  const db = c.get('db');
-  const id = c.req.param('id');
-  const [existing] = await db.select({ id: services.id }).from(services).where(eq(services.id, id)).limit(1);
-  if (!existing) return c.json({ error: 'Not found' }, 404);
-  await db.delete(services).where(eq(services.id, id));
-  return c.json({ ok: true });
-});
-
 // ─── Employees ────────────────────────────────────────────────────────────────
 
 adminRoutes.get('/employees', async (c) => {
   const db = c.get('db');
   const emps = await db
-    .select({ id: employees.id, name: employees.name, email: employees.email, profilePictureUrl: employees.profilePictureUrl, isAdmin: employees.isAdmin, createdAt: employees.createdAt })
+    .select({ id: employees.id, name: employees.name, email: employees.email, profilePictureUrl: employees.profilePictureUrl, isAdmin: employees.isAdmin, isActive: employees.isActive, createdAt: employees.createdAt })
     .from(employees)
     .orderBy(employees.name);
 
@@ -190,13 +182,27 @@ adminRoutes.post('/employees', zValidator('json', createEmployeeSchema), async (
   return c.json({ employee: { id: emp.id, name: emp.name, email: emp.email, isAdmin: emp.isAdmin } }, 201);
 });
 
-adminRoutes.delete('/employees/:id', async (c) => {
+adminRoutes.patch('/employees/:id', zValidator('json', adminUpdateEmployeeSchema), async (c) => {
   const db = c.get('db');
   const id = c.req.param('id');
-  if (id === c.get('userId')) return c.json({ error: 'Cannot delete yourself' }, 422);
+  const input = c.req.valid('json');
+
   const [existing] = await db.select({ id: employees.id }).from(employees).where(eq(employees.id, id)).limit(1);
   if (!existing) return c.json({ error: 'Not found' }, 404);
-  await db.delete(employees).where(eq(employees.id, id));
+
+  const { roleIds, ...rest } = input;
+
+  if (Object.keys(rest).length > 0) {
+    await db.update(employees).set(rest).where(eq(employees.id, id));
+  }
+
+  if (roleIds) {
+    await db.delete(employeeRoles).where(eq(employeeRoles.employeeId, id));
+    await Promise.all(roleIds.map((roleId) =>
+      db.insert(employeeRoles).values({ employeeId: id, roleId })
+    ));
+  }
+
   return c.json({ ok: true });
 });
 
