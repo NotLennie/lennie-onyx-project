@@ -1,9 +1,8 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import type { LayoutData } from './$types';
   import { page } from '$app/stores';
 
-  let { children, data } = $props<{ children: Snippet; data: LayoutData }>();
+  let { children } = $props<{ children: Snippet }>();
 
   const navLinks = [
     { href: '/portal/dashboard', label: 'Dashboard' },

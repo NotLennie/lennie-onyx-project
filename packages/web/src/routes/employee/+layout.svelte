@@ -1,9 +1,8 @@
 <script lang="ts">
   import type { Snippet } from 'svelte';
-  import type { LayoutData } from './$types';
   import { page } from '$app/state';
 
-  let { children, data } = $props<{ children: Snippet; data: LayoutData }>();
+  let { children } = $props<{ children: Snippet }>();
 
   function navStyle(href: string): string {
     const active = page.url.pathname.startsWith(href);
