@@ -1,95 +1,91 @@
 <script lang="ts">
   import type { PageData } from './$types';
+  import PageHeader from '$lib/components/portal/PageHeader.svelte';
+  import HeroCard from '$lib/components/portal/HeroCard.svelte';
+  import Card from '$lib/components/portal/Card.svelte';
+  import DataTable from '$lib/components/portal/DataTable.svelte';
+
+  type FlatAppt = {
+    appointmentId: string;
+    date: string;
+    status: string;
+    clientName: string;
+    serviceName: string;
+    price: string;
+    startTime: string;
+    endTime: string;
+  };
 
   let { data } = $props<{ data: PageData }>();
 
   const today = data.today;
 
-  const todaySchedule = $derived(
-    data.todayAppointments
-      .filter((a) => a.status === 'new' || a.status === 'confirmed' || a.status === 'completed')
-      .sort((a, b) => a.startTime.localeCompare(b.startTime))
-  );
+  function formatDate(date: string) {
+    return new Date(date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  }
+  function formatDateShort(date: string) {
+    return new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+  }
 
+  // Derive upcoming (future confirmed/new appointments, sorted by date asc)
   const upcoming = $derived(
-    data.allAppointments
-      .filter((a) => (a.status === 'new' || a.status === 'confirmed') && a.date > today)
+    [...(data.allAppointments as FlatAppt[])]
+      .filter((a) => (a.status === 'new' || a.status === 'confirmed') && a.date >= today)
       .sort((a, b) => a.date.localeCompare(b.date) || a.startTime.localeCompare(b.startTime))
-      .slice(0, 10)
   );
 
-  function statusColor(status: string) {
-    if (status === 'completed') return '#22c55e';
-    if (status === 'cancelled') return '#ef4444';
-    return '#C9A84C';
-  }
+  // Derive recent (all appointments sorted by date desc, limited to 8)
+  const recentAppointments = $derived(
+    [...(data.allAppointments as FlatAppt[])]
+      .sort((a, b) => b.date.localeCompare(a.date) || a.startTime.localeCompare(b.startTime))
+      .slice(0, 8)
+  );
 
-  function formatDate(d: string) {
-    return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-  }
+  const next = $derived(upcoming[0]);
+
+  const columns = [
+    { key: 'date', label: 'Date', width: '1.1fr' },
+    { key: 'client', label: 'Client', width: '1.3fr' },
+    { key: 'service', label: 'Service', width: '1.4fr' },
+    { key: 'time', label: 'Time', width: '0.9fr' },
+    { key: 'status', label: 'Status', width: '0.9fr' },
+  ];
 </script>
 
-<div>
-  <div style="color:rgba(255,255,255,0.4);font-size:8px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:4px;">Employee Portal</div>
-  <div style="color:white;font-size:20px;font-family:Georgia,serif;font-weight:300;letter-spacing:0.05em;margin-bottom:20px;">DASHBOARD</div>
+<div style="padding:32px;display:flex;flex-direction:column;gap:20px;">
+  <PageHeader eyebrow="Welcome Back" title={data.user.name.toUpperCase()} user={data.user} />
 
-  <div style="display:grid;grid-template-columns:3fr 2fr;gap:20px;align-items:start;">
-    <div>
-      <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">
-        Today's Schedule — {new Date(today + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-      </div>
-      {#if todaySchedule.length === 0}
-        <div style="background:#242424;border:1px solid #333;padding:24px;color:rgba(255,255,255,0.3);font-size:10px;">No appointments today.</div>
+  <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px;">
+    <HeroCard image="/images/portal_background.png" title="Ready for today?" cta={{ label: 'View Schedule', href: '/employee/appointments' }} />
+    <Card accent label="Next Appointment">
+      {#if next}
+        <div style="color:white;font-family:Georgia,serif;font-size:22px;font-weight:300;">{formatDate(next.date)}</div>
+        <div style="color:var(--color-gold);font-size:14px;margin-top:4px;">{next.startTime} — {next.clientName}</div>
+        <div style="color:rgba(255,255,255,0.5);font-size:12px;margin-top:2px;">{next.serviceName}{next.endTime ? ` · until ${next.endTime}` : ''}</div>
+        <a href="/employee/appointments" style="color:rgba(255,255,255,0.5);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;margin-top:14px;display:inline-block;text-decoration:none;">View Details →</a>
       {:else}
-        {#each todaySchedule as appt}
-          <div style="background:#242424;border:1px solid #333;border-left:2px solid #C9A84C;padding:10px 14px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;">
-            <div style="display:flex;align-items:center;gap:12px;">
-              <div style="color:#C9A84C;font-size:10px;font-weight:500;min-width:70px;">{appt.startTime}–{appt.endTime}</div>
-              <div>
-                <div style="color:white;font-size:10px;font-weight:500;">{appt.serviceName}</div>
-                <div style="color:rgba(255,255,255,0.4);font-size:9px;">{appt.clientName}</div>
-              </div>
-            </div>
-            <div style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;color:{statusColor(appt.status)};background:{statusColor(appt.status)}15;">{appt.status}</div>
-          </div>
-        {/each}
+        <div style="color:rgba(255,255,255,0.3);font-size:13px;">No upcoming appointments today.</div>
       {/if}
-
-      <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-top:20px;margin-bottom:10px;">Upcoming Appointments</div>
-      {#if upcoming.length === 0}
-        <div style="background:#242424;border:1px solid #333;padding:24px;color:rgba(255,255,255,0.3);font-size:10px;">No upcoming appointments.</div>
-      {:else}
-        {#each upcoming as appt}
-          <div style="background:#242424;border:1px solid #333;border-left:2px solid #C9A84C;padding:10px 14px;margin-bottom:4px;display:flex;align-items:center;justify-content:space-between;">
-            <div style="display:flex;align-items:center;gap:12px;">
-              <div style="color:#C9A84C;font-size:10px;font-weight:500;min-width:70px;">{formatDate(appt.date)}</div>
-              <div>
-                <div style="color:white;font-size:10px;font-weight:500;">{appt.serviceName}</div>
-                <div style="color:rgba(255,255,255,0.4);font-size:9px;">{appt.clientName} · {appt.startTime}–{appt.endTime}</div>
-              </div>
-            </div>
-            <div style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;color:{statusColor(appt.status)};background:{statusColor(appt.status)}15;">{appt.status}</div>
-          </div>
-        {/each}
-      {/if}
-    </div>
-
-    <div>
-      <div style="color:rgba(255,255,255,0.35);font-size:8px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Recent Activity</div>
-      <div style="background:#242424;border:1px solid #333;padding:16px;">
-        {#each data.allAppointments.slice(0, 8) as appt}
-          <div style="display:flex;align-items:flex-start;gap:8px;padding:6px 0;border-bottom:1px solid #2a2a2a;">
-            <div style="width:6px;height:6px;background:#C9A84C;margin-top:4px;flex-shrink:0;"></div>
-            <div>
-              <div style="color:rgba(255,255,255,0.6);font-size:9px;">{appt.serviceName} with {appt.clientName}</div>
-              <div style="color:rgba(255,255,255,0.25);font-size:8px;margin-top:1px;">{formatDate(appt.date)} · {appt.startTime}</div>
-            </div>
-          </div>
-        {/each}
-        {#if data.allAppointments.length === 0}
-          <div style="color:rgba(255,255,255,0.3);font-size:10px;">No recent activity.</div>
-        {/if}
-      </div>
-    </div>
+    </Card>
   </div>
+
+  <DataTable
+    title="Recent Appointments"
+    viewAllHref="/employee/appointments"
+    columns={columns}
+    rows={recentAppointments}
+  >
+    {#snippet row(appt)}
+      <span>{formatDateShort(appt.date)}</span>
+      <span>{appt.clientName ?? '—'}</span>
+      <span>{appt.serviceName ?? '—'}</span>
+      <span>{appt.startTime ?? '—'}</span>
+      <span style="color:{appt.status === 'cancelled' ? '#f87171' : appt.status === 'completed' ? '#5db974' : 'var(--color-gold)'};font-size:10px;letter-spacing:0.15em;text-transform:uppercase;">
+        {appt.status}
+      </span>
+    {/snippet}
+    {#snippet empty()}
+      <span>No recent appointments.</span>
+    {/snippet}
+  </DataTable>
 </div>
