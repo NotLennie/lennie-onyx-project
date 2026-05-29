@@ -2,6 +2,9 @@
   import type { PageData } from './$types';
   import { api } from '$lib/api';
   import { invalidateAll } from '$app/navigation';
+  import PageShell from '$lib/components/portal/PageShell.svelte';
+  import PageHeader from '$lib/components/portal/PageHeader.svelte';
+  import DataTable from '$lib/components/portal/DataTable.svelte';
 
   let { data } = $props<{ data: PageData }>();
 
@@ -37,54 +40,49 @@
   function formatDate(d: string) {
     return new Date(d + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
   }
+
+  const columns = [
+    { key: 'date', label: 'Date & Time', width: '1.4fr' },
+    { key: 'client', label: 'Client', width: '1.1fr' },
+    { key: 'service', label: 'Service', width: '1.2fr' },
+    { key: 'price', label: 'Price', width: '0.8fr' },
+    { key: 'status', label: 'Status', width: '1.1fr' },
+  ];
 </script>
 
-<div>
-  <div style="color:rgba(255,255,255,0.4);font-size:8px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:4px;">Employee Portal</div>
-  <div style="color:white;font-size:20px;font-family:Georgia,serif;font-weight:300;letter-spacing:0.05em;margin-bottom:20px;">APPOINTMENTS</div>
+<PageShell bgImage="/images/portal_background.png">
+  <PageHeader eyebrow="Staff Portal" title="APPOINTMENTS" user={data.user} />
 
   {#if error}
-    <div style="margin-bottom:12px;padding:10px 14px;font-size:10px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{error}</div>
+    <div style="padding:10px 14px;font-size:10px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{error}</div>
   {/if}
 
-  {#if sorted.length === 0}
-    <div style="background:#242424;border:1px solid #333;padding:32px;text-align:center;color:rgba(255,255,255,0.3);font-size:10px;">No appointments found.</div>
-  {:else}
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;padding:8px 14px;border-bottom:1px solid #333;">
-      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Date & Time</div>
-      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Client</div>
-      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Service</div>
-      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Price</div>
-      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Status</div>
-    </div>
-
-    {#each sorted as appt}
-      {@const isPast = appt.date < today}
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;padding:10px 14px;border-bottom:1px solid #2a2a2a;border-left:2px solid #C9A84C;align-items:center;">
-        <div>
-          <div style="color:white;font-size:10px;font-weight:500;">{formatDate(appt.date)}</div>
-          <div style="color:rgba(255,255,255,0.35);font-size:9px;">{appt.startTime}–{appt.endTime}</div>
-        </div>
-        <div style="color:white;font-size:10px;">{appt.clientName}</div>
-        <div style="color:white;font-size:10px;">{appt.serviceName}</div>
-        <div style="color:rgba(255,255,255,0.5);font-size:10px;">${appt.price}</div>
-        <div>
-          {#if isPast}
-            <span style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;color:{statusColor(appt.status)};background:{statusColor(appt.status)}15;">{appt.status}</span>
-          {:else}
-            <select
-              value={appt.status}
-              onchange={(e) => changeStatus(appt.appointmentId, (e.target as HTMLSelectElement).value as any)}
-              disabled={updating === appt.appointmentId}
-              style="background:#242424;border:1px solid #333;color:{statusColor(appt.status)};font-size:9px;padding:3px 6px;cursor:pointer;"
-            >
-              {#each statuses as s}
-                <option value={s} style="color:{statusColor(s)}">{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-              {/each}
-            </select>
-          {/if}
-        </div>
+  <DataTable columns={columns} rows={sorted}>
+    {#snippet row(appt)}
+      <div>
+        <div style="color:white;font-size:11px;font-weight:500;">{formatDate(appt.date)}</div>
+        <div style="color:rgba(255,255,255,0.35);font-size:9px;">{appt.startTime}–{appt.endTime}</div>
       </div>
-    {/each}
-  {/if}
-</div>
+      <span>{appt.clientName}</span>
+      <span>{appt.serviceName}</span>
+      <span style="color:rgba(255,255,255,0.5);">${appt.price}</span>
+      <span>
+        {#if appt.date < today}
+          <span style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:{statusColor(appt.status)};">{appt.status}</span>
+        {:else}
+          <select
+            value={appt.status}
+            onchange={(e) => changeStatus(appt.appointmentId, (e.target as HTMLSelectElement).value as any)}
+            disabled={updating === appt.appointmentId}
+            style="background:#242424;border:1px solid #333;color:{statusColor(appt.status)};font-size:9px;padding:3px 6px;cursor:pointer;"
+          >
+            {#each statuses as s}
+              <option value={s} style="color:{statusColor(s)}">{s.charAt(0).toUpperCase() + s.slice(1)}</option>
+            {/each}
+          </select>
+        {/if}
+      </span>
+    {/snippet}
+    {#snippet empty()}<span>No appointments to show.</span>{/snippet}
+  </DataTable>
+</PageShell>

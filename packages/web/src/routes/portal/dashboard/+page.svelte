@@ -1,5 +1,17 @@
 <script lang="ts">
   import type { PageData } from './$types';
+  import PageHeader from '$lib/components/portal/PageHeader.svelte';
+  import HeroCard from '$lib/components/portal/HeroCard.svelte';
+  import Card from '$lib/components/portal/Card.svelte';
+  import DataTable from '$lib/components/portal/DataTable.svelte';
+
+  type AppointmentRow = {
+    id: string;
+    date: string;
+    status: 'new' | 'confirmed' | 'cancelled' | 'completed';
+    createdAt: string;
+    services: { serviceName: string; startTime: string; endTime: string; employeeName: string }[];
+  };
 
   let { data } = $props<{ data: PageData }>();
 
@@ -8,57 +20,58 @@
       weekday: 'long', month: 'long', day: 'numeric',
     });
   }
+  function formatDateShort(date: string) {
+    return new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+  }
+
+  const next = $derived(data.upcoming[0]);
+  const historyRows = $derived(data.recentActivity as AppointmentRow[]);
+  const historyColumns = [
+    { key: 'date', label: 'Date', width: '1.1fr' },
+    { key: 'service', label: 'Service', width: '1.4fr' },
+    { key: 'stylist', label: 'Stylist', width: '1.3fr' },
+    { key: 'status', label: 'Status', width: '1fr' },
+    { key: 'action', label: 'Action', width: '0.9fr' },
+  ];
 </script>
 
-<div style="max-width:720px;">
-  <div style="color:rgba(255,255,255,0.4);font-size:11px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:6px;">Welcome Back</div>
-  <div style="color:white;font-size:28px;font-family:Georgia,serif;font-weight:300;letter-spacing:0.05em;margin-bottom:24px;">{data.user.name.toUpperCase()}</div>
+<div style="padding:32px;display:flex;flex-direction:column;gap:20px;">
+  <PageHeader eyebrow="Welcome Back" title={data.user.name.toUpperCase()} user={data.user} />
 
-  <div style="margin-bottom:28px;">
-    <a
-      href="/portal/book"
-      style="display:inline-block;background:var(--color-gold);color:#000;padding:12px 28px;font-size:11px;letter-spacing:0.2em;text-transform:uppercase;font-weight:600;text-decoration:none;"
-    >
-      Book Appointment
-    </a>
+  <div style="display:grid;grid-template-columns:1.5fr 1fr;gap:20px;">
+    <HeroCard image="/images/portal_background.png" title="Ready for your next transformation?" cta={{ label: 'Book Appointment', href: '/portal/book' }} />
+    <Card accent label="Next Appointment">
+      {#if next}
+        <div style="color:white;font-family:Georgia,serif;font-size:22px;font-weight:300;">{formatDate(next.date)}</div>
+        {#each next.services as svc}
+          <div style="color:var(--color-gold);font-size:14px;margin-top:4px;">{svc.startTime}</div>
+          <div style="color:rgba(255,255,255,0.5);font-size:12px;margin-top:2px;">{svc.serviceName} · {svc.employeeName}</div>
+        {/each}
+        <a href="/portal/appointments" style="color:rgba(255,255,255,0.5);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;margin-top:14px;display:inline-block;text-decoration:none;">View Details →</a>
+      {:else}
+        <div style="color:rgba(255,255,255,0.3);font-size:13px;">No upcoming appointments.</div>
+        <a href="/portal/book" style="color:var(--color-gold);font-size:12px;margin-top:10px;display:inline-block;">Book one →</a>
+      {/if}
+    </Card>
   </div>
 
-  <div style="color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Upcoming</div>
-  {#if data.upcoming.length === 0}
-    <div style="color:rgba(255,255,255,0.3);font-size:14px;margin-bottom:24px;">No upcoming appointments. <a href="/portal/book" style="color:var(--color-gold);">Book one →</a></div>
-  {:else}
-    {#each data.upcoming as appt}
-      <div style="background:var(--color-surface);border:1px solid var(--color-border);border-top:2px solid var(--color-gold);padding:18px;margin-bottom:24px;">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
-          <div style="color:white;font-size:14px;font-weight:500;">{formatDate(appt.date)}</div>
-          <div style="background:rgba(201,168,76,0.12);color:var(--color-gold);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;padding:4px 10px;">Confirmed</div>
-        </div>
-        {#each appt.services as svc}
-          <div style="color:rgba(255,255,255,0.5);font-size:13px;">{svc.serviceName} · {svc.startTime}–{svc.endTime} · {svc.employeeName}</div>
-        {/each}
-      </div>
-    {/each}
-  {/if}
-
-  {#if data.recentActivity.length > 0}
-    <div style="color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Recent Activity</div>
-    <div style="border:1px solid #2a2a2a;">
-      {#each data.recentActivity as appt, i}
-        <div style="padding:14px 18px;display:flex;justify-content:space-between;align-items:center;{i < data.recentActivity.length - 1 ? 'border-bottom:1px solid #2a2a2a;' : ''}">
-          <div>
-            <div style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:3px;">
-              {appt.status === 'cancelled' ? 'Booking cancelled' : 'Appointment completed'} — {formatDate(appt.date)}
-            </div>
-            {#each appt.services as svc}
-              <div style="color:rgba(255,255,255,0.35);font-size:12px;">{svc.serviceName} · {svc.employeeName}</div>
-            {/each}
-          </div>
-          <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;flex-shrink:0;margin-left:16px;
-            {appt.status === 'cancelled' ? 'color:rgba(239,68,68,0.7)' : 'color:rgba(255,255,255,0.3)'}">
-            {appt.status === 'cancelled' ? 'Cancelled' : 'Completed'}
-          </div>
-        </div>
-      {/each}
-    </div>
-  {/if}
+  <DataTable
+    title="Appointment History"
+    viewAllHref="/portal/appointments"
+    columns={historyColumns}
+    rows={historyRows}
+  >
+    {#snippet row(appt)}
+      <span>{formatDateShort(appt.date)}</span>
+      <span>{appt.services[0]?.serviceName ?? '—'}</span>
+      <span>{appt.services[0]?.employeeName ?? '—'}</span>
+      <span style="color:{appt.status === 'cancelled' ? '#f87171' : '#5db974'};font-size:10px;letter-spacing:0.15em;text-transform:uppercase;">
+        {appt.status === 'cancelled' ? '✕ Cancelled' : '✓ Completed'}
+      </span>
+      <a href="/portal/appointments" style="color:var(--color-gold);font-size:11px;text-decoration:none;">View Details</a>
+    {/snippet}
+    {#snippet empty()}
+      <span>No appointment history yet.</span>
+    {/snippet}
+  </DataTable>
 </div>

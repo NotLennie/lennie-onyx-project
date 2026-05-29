@@ -1,7 +1,11 @@
 <script lang="ts">
   import type { PageData } from './$types';
+  import type { Employee } from '@project/shared';
   import { api } from '$lib/api';
   import { invalidateAll } from '$app/navigation';
+  import PageShell from '$lib/components/portal/PageShell.svelte';
+  import PageHeader from '$lib/components/portal/PageHeader.svelte';
+  import DataTable from '$lib/components/portal/DataTable.svelte';
 
   let { data } = $props<{ data: PageData }>();
   const isAdmin = data.isAdmin;
@@ -24,17 +28,17 @@
   let editValue = $state('');
   let saving = $state(false);
 
-  const filtered = $derived.by(() => {
-    let list = data.employees;
+  const filtered = $derived.by((): Employee[] => {
+    let list: Employee[] = data.employees;
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter((e) => e.name.toLowerCase().includes(q) || e.email.toLowerCase().includes(q));
+      list = list.filter((e: Employee) => e.name.toLowerCase().includes(q) || e.email.toLowerCase().includes(q));
     }
-    if (roleFilter !== 'all') list = list.filter((e) => e.roles.some((r) => r.id === roleFilter));
-    if (accessFilter === 'admin') list = list.filter((e) => e.isAdmin);
-    if (accessFilter === 'standard') list = list.filter((e) => !e.isAdmin);
-    if (statusFilter === 'active') list = list.filter((e) => e.isActive);
-    if (statusFilter === 'inactive') list = list.filter((e) => !e.isActive);
+    if (roleFilter !== 'all') list = list.filter((e: Employee) => e.roles.some((r) => r.id === roleFilter));
+    if (accessFilter === 'admin') list = list.filter((e: Employee) => e.isAdmin);
+    if (accessFilter === 'standard') list = list.filter((e: Employee) => !e.isAdmin);
+    if (statusFilter === 'active') list = list.filter((e: Employee) => e.isActive);
+    if (statusFilter === 'inactive') list = list.filter((e: Employee) => !e.isActive);
     return list;
   });
 
@@ -70,7 +74,7 @@
   async function saveEdit(id: string, field: string) {
     saving = true;
     try {
-      const update: Record<string, any> = {};
+      const update: Record<string, unknown> = {};
       if (field === 'name') update.name = editValue;
       if (field === 'email') update.email = editValue;
       await api.admin.employees.update(id, update);
@@ -105,13 +109,29 @@
     if (e.key === 'Enter') saveEdit(id, field);
     if (e.key === 'Escape') editingCell = null;
   }
+
+  const columns = [
+    { key: 'name', label: 'Name', width: '1.2fr' },
+    { key: 'email', label: 'Email', width: '1.6fr' },
+    { key: 'role', label: 'Role', width: '1fr' },
+    { key: 'admin', label: 'Admin', width: '0.7fr' },
+    { key: 'active', label: 'Active', width: '0.7fr' },
+    { key: 'action', label: 'Action', width: '0.8fr' },
+  ];
 </script>
 
-<div>
-  <div style="color:rgba(255,255,255,0.4);font-size:8px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:4px;">Employee Portal</div>
-  <div style="color:white;font-size:20px;font-family:Georgia,serif;font-weight:300;letter-spacing:0.05em;margin-bottom:20px;">EMPLOYEES</div>
+<PageShell bgImage="/images/portal_background.png">
+  <PageHeader eyebrow="Staff Portal" title="EMPLOYEES" user={data.user}>
+    {#snippet actions()}
+      {#if isAdmin}
+        <button onclick={() => showCreate = !showCreate} style="background:var(--color-gold);border:none;color:#000;padding:8px 18px;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;font-weight:700;cursor:pointer;">
+          {showCreate ? '✕ Cancel' : '+ Add Employee'}
+        </button>
+      {/if}
+    {/snippet}
+  </PageHeader>
 
-  <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
     <input type="search" bind:value={search} placeholder="Search…" style="flex:1;min-width:120px;background:#242424;border:1px solid #333;color:white;font-size:10px;padding:7px 10px;" />
     <select bind:value={roleFilter} style="background:#242424;border:1px solid #333;color:rgba(255,255,255,0.5);font-size:9px;padding:7px 10px;">
       <option value="all">All Roles</option>
@@ -127,19 +147,14 @@
       <option value="active">Active</option>
       <option value="inactive">Inactive</option>
     </select>
-    {#if isAdmin}
-      <button onclick={() => showCreate = !showCreate} style="background:#C9A84C;border:none;color:#000;font-size:8px;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;padding:7px 14px;cursor:pointer;">
-        {showCreate ? '✕ Cancel' : '+ Create New Employee'}
-      </button>
-    {/if}
   </div>
 
   {#if submitError}
-    <div style="margin-bottom:12px;padding:10px 14px;font-size:10px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{submitError}</div>
+    <div style="padding:10px 14px;font-size:10px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{submitError}</div>
   {/if}
 
   {#if showCreate && isAdmin}
-    <div style="background:#242424;border:1px solid #333;border-top:2px solid #C9A84C;padding:16px;margin-bottom:16px;">
+    <div style="background:#242424;border:1px solid #333;border-top:2px solid #C9A84C;padding:16px;">
       <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
         <input type="text" bind:value={newName} placeholder="Full name" style="flex:1;min-width:100px;background:transparent;border:1px solid #333;color:white;font-size:10px;padding:7px 10px;" />
         <input type="email" bind:value={newEmail} placeholder="Email" style="flex:1;min-width:100px;background:transparent;border:1px solid #333;color:white;font-size:10px;padding:7px 10px;" />
@@ -170,66 +185,48 @@
     </div>
   {/if}
 
-  {#if filtered.length === 0}
-    <div style="background:#242424;border:1px solid #333;padding:32px;text-align:center;color:rgba(255,255,255,0.3);font-size:10px;">No employees found.</div>
-  {:else}
-    <div style="display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 120px;padding:8px 14px;border-bottom:1px solid #333;">
-      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Name</div>
-      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Email</div>
-      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Role</div>
-      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Access</div>
-      <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.15em;text-transform:uppercase;">Status</div>
-    </div>
-
-    {#each filtered as emp}
-      <div style="display:grid;grid-template-columns:2fr 1.5fr 1fr 1fr 120px;padding:10px 14px;border-bottom:1px solid #2a2a2a;border-left:2px solid #C9A84C;align-items:center;{emp.isActive ? '' : 'opacity:0.5;'}">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);color:#C9A84C;flex-shrink:0;">{emp.name.charAt(0).toUpperCase()}</div>
-          {#if editingCell?.id === emp.id && editingCell.field === 'name'}
-            <input type="text" bind:value={editValue} onblur={() => saveEdit(emp.id, 'name')} onkeydown={(e) => handleKeydown(e, emp.id, 'name')} autofocus style="background:transparent;border:1px solid #C9A84C;color:white;font-size:10px;padding:4px 6px;flex:1;" />
-          {:else}
-            <span onclick={() => startEdit(emp.id, 'name', emp.name)} style="color:white;font-size:10px;font-weight:500;{isAdmin ? 'cursor:pointer;' : ''}">{emp.name}</span>
-          {/if}
-        </div>
-        <div>
-          {#if editingCell?.id === emp.id && editingCell.field === 'email'}
-            <input type="email" bind:value={editValue} onblur={() => saveEdit(emp.id, 'email')} onkeydown={(e) => handleKeydown(e, emp.id, 'email')} autofocus style="background:transparent;border:1px solid #C9A84C;color:white;font-size:10px;padding:4px 6px;width:90%;box-sizing:border-box;" />
-          {:else}
-            <span onclick={() => startEdit(emp.id, 'email', emp.email)} style="color:rgba(255,255,255,0.5);font-size:10px;{isAdmin ? 'cursor:pointer;' : ''}">{emp.email}</span>
-          {/if}
-        </div>
-        <div style="display:flex;gap:3px;flex-wrap:wrap;">
-          {#each emp.roles as role}
-            <span style="font-size:8px;padding:1px 5px;border:1px solid #333;color:rgba(255,255,255,0.5);">{role.name}</span>
-          {/each}
-        </div>
-        <div>
-          {#if isAdmin}
-            <div style="display:flex;gap:2px;">
-              <button onclick={() => toggleAccess(emp.id, emp.isAdmin)}
-                style="padding:3px 8px;font-size:8px;cursor:pointer;border:1px solid #C9A84C;
-                  {emp.isAdmin ? 'background:#C9A84C;color:#000;' : 'background:transparent;color:#C9A84C;'}"
-              >Admin</button>
-              <button onclick={() => toggleAccess(emp.id, emp.isAdmin)}
-                style="padding:3px 8px;font-size:8px;cursor:pointer;border:1px solid #C9A84C;
-                  {!emp.isAdmin ? 'background:#C9A84C;color:#000;' : 'background:transparent;color:#C9A84C;'}"
-              >Standard</button>
-            </div>
-          {:else}
-            <span style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;{emp.isAdmin ? 'color:#C9A84C;background:rgba(201,168,76,0.15);' : 'color:rgba(255,255,255,0.35);background:rgba(255,255,255,0.06);'}">{emp.isAdmin ? 'Admin' : 'Standard'}</span>
-          {/if}
-        </div>
-        <div>
-          {#if isAdmin}
-            <select value={emp.isActive ? 'active' : 'inactive'} onchange={() => toggleActive(emp.id, emp.isActive)} style="background:#242424;border:1px solid #333;color:{emp.isActive ? '#22c55e' : '#ef4444'};font-size:9px;padding:3px 6px;cursor:pointer;">
-              <option value="active" style="color:#22c55e">Active</option>
-              <option value="inactive" style="color:#ef4444">Inactive</option>
-            </select>
-          {:else}
-            <span style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;{emp.isActive ? 'color:#22c55e;background:rgba(34,197,94,0.15);' : 'color:rgba(255,255,255,0.3);background:rgba(255,255,255,0.06);'}">{emp.isActive ? 'Active' : 'Inactive'}</span>
-          {/if}
-        </div>
-      </div>
-    {/each}
-  {/if}
-</div>
+  <DataTable columns={columns} rows={filtered}>
+    {#snippet row(emp: Employee)}
+      <span>
+        {#if editingCell !== null && editingCell.id === emp.id && editingCell.field === 'name'}
+          <input type="text" bind:value={editValue} onblur={() => saveEdit(emp.id, 'name')} onkeydown={(e) => handleKeydown(e, emp.id, 'name')} autofocus style="background:transparent;border:1px solid #C9A84C;color:white;font-size:10px;padding:4px 6px;width:90%;box-sizing:border-box;" />
+        {:else}
+          <span onclick={() => startEdit(emp.id, 'name', emp.name)} style="{isAdmin ? 'cursor:pointer;' : ''}">{emp.name}{emp.id === data.user.id ? ' (You)' : ''}</span>
+        {/if}
+      </span>
+      <span>
+        {#if editingCell !== null && editingCell.id === emp.id && editingCell.field === 'email'}
+          <input type="email" bind:value={editValue} onblur={() => saveEdit(emp.id, 'email')} onkeydown={(e) => handleKeydown(e, emp.id, 'email')} autofocus style="background:transparent;border:1px solid #C9A84C;color:white;font-size:10px;padding:4px 6px;width:90%;box-sizing:border-box;" />
+        {:else}
+          <span onclick={() => startEdit(emp.id, 'email', emp.email)} style="color:rgba(255,255,255,0.5);{isAdmin ? 'cursor:pointer;' : ''}">{emp.email}</span>
+        {/if}
+      </span>
+      <span style="display:flex;flex-wrap:wrap;gap:3px;">
+        {#each emp.roles as role}
+          <span style="font-size:8px;padding:1px 5px;border:1px solid #333;color:rgba(255,255,255,0.5);margin-right:2px;">{role.name}</span>
+        {/each}
+      </span>
+      <span>
+        {#if isAdmin}
+          <button onclick={() => toggleAccess(emp.id, emp.isAdmin)}
+            style="padding:3px 8px;font-size:8px;cursor:pointer;border:1px solid #C9A84C;
+              {emp.isAdmin ? 'background:#C9A84C;color:#000;' : 'background:transparent;color:#C9A84C;'}"
+          >{emp.isAdmin ? 'Admin' : 'Std'}</button>
+        {:else}
+          <span style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;{emp.isAdmin ? 'color:#C9A84C;' : 'color:rgba(255,255,255,0.35);'}">{emp.isAdmin ? 'Admin' : 'Std'}</span>
+        {/if}
+      </span>
+      <span style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:{emp.isActive ? '#5db974' : 'rgba(255,255,255,0.4)'};">
+        {emp.isActive ? '● Active' : '○ Inactive'}
+      </span>
+      {#if isAdmin}
+        <button onclick={() => toggleActive(emp.id, emp.isActive)} style="background:none;border:1px solid #333;color:{emp.isActive ? '#22c55e' : '#ef4444'};font-size:9px;cursor:pointer;padding:3px 8px;">
+          {emp.isActive ? 'Deactivate' : 'Activate'}
+        </button>
+      {:else}
+        <span style="color:rgba(255,255,255,0.3);">—</span>
+      {/if}
+    {/snippet}
+    {#snippet empty()}<span>No employees.</span>{/snippet}
+  </DataTable>
+</PageShell>
