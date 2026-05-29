@@ -102,10 +102,24 @@ export const api = {
           method: 'PUT',
           body: JSON.stringify(input),
         }),
-      uploadPicture: (file: File) => {
+      uploadPicture: async (file: File): Promise<{ url: string }> => {
         const form = new FormData();
         form.append('file', file);
-        return requestForm<{ url: string }>('/api/client/profile/picture', form);
+        // POST to the SvelteKit proxy route (same-origin, relative URL) so the
+        // client bundle does not need PUBLIC_API_URL.  That value is a Cloudflare
+        // runtime binding — it is never injected into import.meta.env at Vite
+        // build time, so BASE would fall back to http://localhost:8787 in
+        // production and every cross-origin fetch would fail with "Failed to fetch".
+        const res = await fetch('/portal/profile/picture', {
+          method: 'POST',
+          credentials: 'include',
+          body: form,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: res.statusText })) as { error: string };
+          throw new Error(err.error ?? res.statusText);
+        }
+        return res.json() as Promise<{ url: string }>;
       },
     },
   },
@@ -131,10 +145,20 @@ export const api = {
         request<{ user: Employee }>('/api/employee/profile'),
       update: (input: UpdateEmployeeInput) =>
         request<{ user: Employee }>('/api/employee/profile', { method: 'PUT', body: JSON.stringify(input) }),
-      uploadPicture: (file: File) => {
+      uploadPicture: async (file: File): Promise<{ url: string }> => {
         const form = new FormData();
         form.append('file', file);
-        return requestForm<{ url: string }>('/api/employee/profile/picture', form);
+        // Same-origin proxy route — see client.profile.uploadPicture for rationale.
+        const res = await fetch('/employee/profile/picture', {
+          method: 'POST',
+          credentials: 'include',
+          body: form,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: res.statusText })) as { error: string };
+          throw new Error(err.error ?? res.statusText);
+        }
+        return res.json() as Promise<{ url: string }>;
       },
     },
     clients: {
