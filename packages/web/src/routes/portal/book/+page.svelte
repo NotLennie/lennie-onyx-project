@@ -3,6 +3,9 @@
   import type { Service } from '@project/shared';
   import { api, type AvailableEmployee } from '$lib/api';
   import { goto } from '$app/navigation';
+  import PageShell from '$lib/components/portal/PageShell.svelte';
+  import PageHeader from '$lib/components/portal/PageHeader.svelte';
+  import Card from '$lib/components/portal/Card.svelte';
 
   let { data } = $props<{ data: PageData }>();
 
@@ -202,32 +205,31 @@
   }
 </script>
 
+<PageShell bgImage="/images/portal_background.png">
+  <PageHeader eyebrow="Client Portal" title="BOOK APPOINTMENT" user={data.user} />
 
-<div style="max-width:640px;">
-  <!-- Header -->
-  <div style="color:rgba(255,255,255,0.4);font-size:11px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:4px;">Client Portal</div>
-  <div style="color:white;font-size:28px;font-family:Georgia,serif;font-weight:300;letter-spacing:0.05em;margin-bottom:16px;">BOOK APPOINTMENT</div>
-
-  <!-- Step indicator -->
-  <div style="display:flex;gap:4px;margin-bottom:6px;">
-    {#each [1,2,3,4] as s}
-      <div style="height:2px;flex:1;{step >= s ? 'background:var(--color-gold);' : 'background:var(--color-border);'}"></div>
-    {/each}
-  </div>
-  <div style="color:rgba(255,255,255,0.25);font-size:10px;letter-spacing:0.1em;margin-bottom:20px;">
-    Step {step} of 4{selectedService ? ` — ${selectedService.name} · ${selectedService.durationMinutes} min · $${selectedService.price}` : ''}
-  </div>
-
-  {#if error}
-    <div role="alert" style="margin-bottom:12px;padding:10px 14px;font-size:13px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">
-      {error}
+  {#if data.services.length === 0}
+    <Card>
+      <div style="color:rgba(255,255,255,0.6);font-size:14px;line-height:1.6;padding:20px 0;text-align:center;">
+        No services available right now.<br>
+        Please contact the salon to schedule an appointment.
+      </div>
+    </Card>
+  {:else}
+    <div style="display:flex;gap:4px;">
+      {#each [1,2,3,4] as s}
+        <div style="height:2px;flex:1;{step >= s ? 'background:var(--color-gold);' : 'background:var(--color-border);'}"></div>
+      {/each}
     </div>
-  {/if}
+    <div style="color:rgba(255,255,255,0.25);font-size:10px;letter-spacing:0.1em;">
+      Step {step} of 4{selectedService ? ` — ${selectedService.name} · ${selectedService.durationMinutes} min · $${selectedService.price}` : ''}
+    </div>
 
-  <!-- Step 1: Choose a Service -->
-  {#if step >= 1}
-    <section style="margin-bottom:20px;">
-      <div style="color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Choose a Service</div>
+    {#if error}
+      <div role="alert" style="padding:10px 14px;font-size:13px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{error}</div>
+    {/if}
+
+    <Card label="Choose a Service">
       {#each data.services as svc}
         <button
           onclick={() => selectService(svc)}
@@ -248,155 +250,147 @@
           </div>
         </button>
       {/each}
-    </section>
-  {/if}
+    </Card>
 
-  <!-- Step 2: Calendar date picker + time slots -->
-  {#if step >= 2 && selectedService}
-    <section style="margin-bottom:20px;">
-      <div style="color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Choose a Date</div>
-
-      <!-- Calendar -->
-      <div style="background:var(--color-surface);border:1px solid var(--color-border);padding:14px;margin-bottom:16px;max-width:290px;">
-        <!-- Month nav -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <button
-            onclick={prevMonth}
-            disabled={!canGoPrev}
-            style="background:none;border:none;cursor:{canGoPrev ? 'pointer' : 'default'};color:{canGoPrev ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)'};font-size:14px;padding:0 4px;"
-          >‹</button>
-          <div style="color:white;font-size:11px;letter-spacing:0.15em;">{monthName}</div>
-          <button
-            onclick={nextMonth}
-            disabled={!canGoNext}
-            style="background:none;border:none;cursor:{canGoNext ? 'pointer' : 'default'};color:{canGoNext ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)'};font-size:14px;padding:0 4px;"
-          >›</button>
-        </div>
-
-        <!-- Day headers -->
-        <div class="calendar-grid" style="margin-bottom:4px;">
-          {#each ['Su','Mo','Tu','We','Th','Fr','Sa'] as dow, i}
-            <div style="text-align:center;font-size:10px;letter-spacing:0.08em;padding:3px 0;
-              {i === 3 ? 'color:rgba(255,255,255,0.2);text-decoration:line-through;' : 'color:var(--color-gold);'}">
-              {dow}
-            </div>
-          {/each}
-        </div>
-
-        <!-- Day cells -->
-        <div class="calendar-grid">
-          {#each calendarCells as cell}
-            {#if cell.state === 'available' || cell.state === 'selected'}
+    {#if step >= 2 && selectedService}
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+        <Card label="Choose a Date">
+          <!-- Calendar -->
+          <div style="background:var(--color-surface);border:1px solid var(--color-border);padding:14px;max-width:290px;">
+            <!-- Month nav -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
               <button
-                onclick={() => cell.dateStr && selectDate(cell.dateStr)}
-                style="background:none;border:none;{cellStyle(cell.state)}"
-              >{cell.day}</button>
-            {:else}
-              <div style={cellStyle(cell.state)}>{cell.day ?? ''}</div>
-            {/if}
-          {/each}
-        </div>
-
-        <!-- Legend -->
-        <div style="border-top:1px solid var(--color-border);margin-top:10px;padding-top:8px;display:flex;gap:14px;flex-wrap:wrap;">
-          <div style="display:flex;align-items:center;gap:4px;">
-            <div style="width:8px;height:8px;background:var(--color-gold);"></div>
-            <div style="color:rgba(255,255,255,0.3);font-size:10px;">Selected</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px;">
-            <div style="width:8px;height:8px;border:1px solid #555;"></div>
-            <div style="color:rgba(255,255,255,0.3);font-size:10px;">Today</div>
-          </div>
-          <div style="display:flex;align-items:center;gap:4px;">
-            <div style="width:8px;height:8px;background:rgba(255,255,255,0.05);"></div>
-            <div style="color:rgba(255,255,255,0.3);font-size:10px;">Unavailable</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Time slots — shown after date selected -->
-      {#if selectedDate}
-        <div style="color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:8px;">
-          Available Times — {selectedDateLabel}
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:4px;">
-          {#each timeSlots as t}
-            <button
-              onclick={() => selectTime(t)}
-              style="padding:6px 12px;font-size:12px;border:none;cursor:pointer;
-                {selectedTime === t
-                  ? 'background:var(--color-gold);color:#000;font-weight:600;'
-                  : 'background:var(--color-surface);border:1px solid var(--color-border);color:rgba(255,255,255,0.5);'}"
-            >{t}</button>
-          {/each}
-        </div>
-      {/if}
-    </section>
-  {/if}
-
-  <!-- Step 3: Choose a Stylist -->
-  {#if step >= 3 && selectedTime}
-    <section style="margin-bottom:20px;">
-      <div style="color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Choose a Stylist</div>
-      {#if loadingEmployees}
-        <div style="color:rgba(255,255,255,0.3);font-size:13px;">Checking availability…</div>
-      {:else}
-        {#each availableEmployees as emp}
-          <button
-            onclick={() => selectEmployee(emp)}
-            style="width:100%;display:flex;align-items:center;gap:12px;padding:12px;margin-bottom:4px;border:none;cursor:pointer;text-align:left;
-              {selectedEmployee?.id === emp.id
-                ? 'background:rgba(201,168,76,0.08);border:1px solid var(--color-gold);'
-                : 'background:var(--color-surface);border:1px solid var(--color-border);'}"
-          >
-            <div style="width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;font-family:serif;
-              {selectedEmployee?.id === emp.id
-                ? 'background:rgba(201,168,76,0.2);color:var(--color-gold);'
-                : 'background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);'}">
-              {emp.name.charAt(0).toUpperCase()}
+                onclick={prevMonth}
+                disabled={!canGoPrev}
+                style="background:none;border:none;cursor:{canGoPrev ? 'pointer' : 'default'};color:{canGoPrev ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)'};font-size:14px;padding:0 4px;"
+              >‹</button>
+              <div style="color:white;font-size:11px;letter-spacing:0.15em;">{monthName}</div>
+              <button
+                onclick={nextMonth}
+                disabled={!canGoNext}
+                style="background:none;border:none;cursor:{canGoNext ? 'pointer' : 'default'};color:{canGoNext ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)'};font-size:14px;padding:0 4px;"
+              >›</button>
             </div>
-            <span style="color:{selectedEmployee?.id === emp.id ? 'white' : 'rgba(255,255,255,0.6)'};font-size:14px;">{emp.name}</span>
-          </button>
-        {/each}
-      {/if}
-    </section>
-  {/if}
 
-  <!-- Step 4: Confirm -->
-  {#if step >= 4 && selectedEmployee}
-    <section>
-      <div style="color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:0.2em;text-transform:uppercase;margin-bottom:10px;">Confirm Booking</div>
-      <div style="background:var(--color-surface);border:1px solid var(--color-border);border-top:2px solid var(--color-gold);padding:18px;margin-bottom:12px;">
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-          <div>
-            <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Service</div>
-            <div style="color:white;font-size:13px;">{selectedService?.name}</div>
+            <!-- Day headers -->
+            <div class="calendar-grid" style="margin-bottom:4px;">
+              {#each ['Su','Mo','Tu','We','Th','Fr','Sa'] as dow, i}
+                <div style="text-align:center;font-size:10px;letter-spacing:0.08em;padding:3px 0;
+                  {i === 3 ? 'color:rgba(255,255,255,0.2);text-decoration:line-through;' : 'color:var(--color-gold);'}">
+                  {dow}
+                </div>
+              {/each}
+            </div>
+
+            <!-- Day cells -->
+            <div class="calendar-grid">
+              {#each calendarCells as cell}
+                {#if cell.state === 'available' || cell.state === 'selected'}
+                  <button
+                    onclick={() => cell.dateStr && selectDate(cell.dateStr)}
+                    style="background:none;border:none;{cellStyle(cell.state)}"
+                  >{cell.day}</button>
+                {:else}
+                  <div style={cellStyle(cell.state)}>{cell.day ?? ''}</div>
+                {/if}
+              {/each}
+            </div>
+
+            <!-- Legend -->
+            <div style="border-top:1px solid var(--color-border);margin-top:10px;padding-top:8px;display:flex;gap:14px;flex-wrap:wrap;">
+              <div style="display:flex;align-items:center;gap:4px;">
+                <div style="width:8px;height:8px;background:var(--color-gold);"></div>
+                <div style="color:rgba(255,255,255,0.3);font-size:10px;">Selected</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <div style="width:8px;height:8px;border:1px solid #555;"></div>
+                <div style="color:rgba(255,255,255,0.3);font-size:10px;">Today</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <div style="width:8px;height:8px;background:rgba(255,255,255,0.05);"></div>
+                <div style="color:rgba(255,255,255,0.3);font-size:10px;">Unavailable</div>
+              </div>
+            </div>
           </div>
-          <div>
-            <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Stylist</div>
-            <div style="color:white;font-size:13px;">{selectedEmployee?.name}</div>
-          </div>
-          <div>
-            <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Date</div>
-            <div style="color:white;font-size:13px;">{selectedDateLabel}</div>
-          </div>
-          <div>
-            <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Time</div>
-            <div style="color:white;font-size:13px;">{selectedTime}</div>
-          </div>
-        </div>
-        <div style="border-top:1px solid var(--color-border);padding-top:10px;display:flex;justify-content:space-between;align-items:center;">
-          <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;">Total</div>
-          <div style="color:var(--color-gold);font-size:16px;font-weight:600;">${selectedService?.price}</div>
-        </div>
+        </Card>
+        {#if selectedDate}
+          <Card label="Available Times — {selectedDateLabel}">
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+              {#each timeSlots as t}
+                <button
+                  onclick={() => selectTime(t)}
+                  style="padding:6px 12px;font-size:12px;border:none;cursor:pointer;
+                    {selectedTime === t
+                      ? 'background:var(--color-gold);color:#000;font-weight:600;'
+                      : 'background:var(--color-surface);border:1px solid var(--color-border);color:rgba(255,255,255,0.5);'}"
+                >{t}</button>
+              {/each}
+            </div>
+          </Card>
+        {/if}
       </div>
-      <button
-        onclick={submit}
-        disabled={submitting}
-        style="width:100%;background:var(--color-gold);border:none;color:#000;padding:12px 28px;font-size:12px;letter-spacing:0.25em;text-transform:uppercase;font-weight:600;cursor:pointer;"
-      >
-        {submitting ? 'Booking…' : 'Confirm Booking'}
-      </button>
-    </section>
+    {/if}
+
+    {#if step >= 3 && selectedTime}
+      <Card label="Choose a Stylist">
+        {#if loadingEmployees}
+          <div style="color:rgba(255,255,255,0.3);font-size:13px;">Checking availability…</div>
+        {:else}
+          {#each availableEmployees as emp}
+            <button
+              onclick={() => selectEmployee(emp)}
+              style="width:100%;display:flex;align-items:center;gap:12px;padding:12px;margin-bottom:4px;border:none;cursor:pointer;text-align:left;
+                {selectedEmployee?.id === emp.id
+                  ? 'background:rgba(201,168,76,0.08);border:1px solid var(--color-gold);'
+                  : 'background:var(--color-surface);border:1px solid var(--color-border);'}"
+            >
+              <div style="width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;font-family:serif;
+                {selectedEmployee?.id === emp.id
+                  ? 'background:rgba(201,168,76,0.2);color:var(--color-gold);'
+                  : 'background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.4);'}">
+                {emp.name.charAt(0).toUpperCase()}
+              </div>
+              <span style="color:{selectedEmployee?.id === emp.id ? 'white' : 'rgba(255,255,255,0.6)'};font-size:14px;">{emp.name}</span>
+            </button>
+          {/each}
+        {/if}
+      </Card>
+    {/if}
+
+    {#if step >= 4 && selectedEmployee}
+      <Card accent label="Confirm Booking">
+        <div style="background:var(--color-surface);border:1px solid var(--color-border);border-top:2px solid var(--color-gold);padding:18px;margin-bottom:12px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+            <div>
+              <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Service</div>
+              <div style="color:white;font-size:13px;">{selectedService?.name}</div>
+            </div>
+            <div>
+              <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Stylist</div>
+              <div style="color:white;font-size:13px;">{selectedEmployee?.name}</div>
+            </div>
+            <div>
+              <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Date</div>
+              <div style="color:white;font-size:13px;">{selectedDateLabel}</div>
+            </div>
+            <div>
+              <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:2px;">Time</div>
+              <div style="color:white;font-size:13px;">{selectedTime}</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--color-border);padding-top:10px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;">Total</div>
+            <div style="color:var(--color-gold);font-size:16px;font-weight:600;">${selectedService?.price}</div>
+          </div>
+        </div>
+        <button
+          onclick={submit}
+          disabled={submitting}
+          style="width:100%;background:var(--color-gold);border:none;color:#000;padding:12px 28px;font-size:12px;letter-spacing:0.25em;text-transform:uppercase;font-weight:600;cursor:pointer;"
+        >
+          {submitting ? 'Booking…' : 'Confirm Booking'}
+        </button>
+      </Card>
+    {/if}
   {/if}
-</div>
+</PageShell>
