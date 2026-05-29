@@ -2,6 +2,9 @@
   import type { PageData } from './$types';
   import { api } from '$lib/api';
   import { invalidateAll } from '$app/navigation';
+  import PageShell from '$lib/components/portal/PageShell.svelte';
+  import PageHeader from '$lib/components/portal/PageHeader.svelte';
+  import DataTable from '$lib/components/portal/DataTable.svelte';
 
   type Appointment = {
     id: string;
@@ -88,153 +91,79 @@
     { id: 'cancelled', label: 'Cancelled' },
     { id: 'all', label: 'View All' },
   ] as const;
+
+  const apptColumns = [
+    { key: 'date', label: 'Date', width: '1.2fr' },
+    { key: 'service', label: 'Service', width: '1.3fr' },
+    { key: 'stylist', label: 'Stylist', width: '1.2fr' },
+    { key: 'time', label: 'Time', width: '0.9fr' },
+    { key: 'status', label: 'Status', width: '0.9fr' },
+    { key: 'action', label: 'Action', width: '0.9fr' },
+  ];
+  const currentRows = $derived(
+    activeTab === 'upcoming' ? upcoming
+    : activeTab === 'completed' ? completed
+    : activeTab === 'cancelled' ? cancelled
+    : allFiltered
+  );
 </script>
 
-
-<div style="max-width:720px;">
-  <!-- Header -->
-  <div style="color:rgba(255,255,255,0.4);font-size:11px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:4px;">Client Portal</div>
-  <div style="color:white;font-size:28px;font-family:Georgia,serif;font-weight:300;letter-spacing:0.05em;margin-bottom:16px;">MY APPOINTMENTS</div>
+<PageShell bgImage="/images/portal_background.png">
+  <PageHeader eyebrow="Client Portal" title="MY APPOINTMENTS" user={data.user} />
 
   {#if error}
-    <div role="alert" style="margin-bottom:12px;padding:10px 14px;font-size:13px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">
-      {error}
-    </div>
+    <div role="alert" style="padding:10px 14px;font-size:13px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{error}</div>
   {/if}
 
-  <!-- Tab bar -->
-  <div style="display:flex;border-bottom:1px solid var(--color-border);margin-bottom:16px;">
+  <div style="display:flex;border-bottom:1px solid var(--color-border);">
     {#each tabs as tab}
       <button
         onclick={() => activeTab = tab.id}
-        style="padding:7px 14px;font-size:12px;letter-spacing:0.15em;text-transform:uppercase;background:none;border:none;cursor:pointer;margin-bottom:-1px;
+        style="padding:9px 16px;font-size:11px;letter-spacing:0.18em;text-transform:uppercase;background:none;border:none;cursor:pointer;margin-bottom:-1px;
           {activeTab === tab.id
             ? 'color:var(--color-gold);border-bottom:2px solid var(--color-gold);'
             : 'color:rgba(255,255,255,0.3);border-bottom:2px solid transparent;'}"
-      >
-        {tab.label}
-      </button>
+      >{tab.label}</button>
     {/each}
   </div>
 
-  <!-- Upcoming tab -->
-  {#if activeTab === 'upcoming'}
-    {#if upcoming.length === 0}
-      <div style="color:rgba(255,255,255,0.25);font-size:13px;">No upcoming appointments. <a href="/portal/book" style="color:var(--color-gold);">Book one →</a></div>
-    {:else}
-      {#each upcoming as appt}
-        <div style="background:var(--color-surface);border:1px solid var(--color-border);border-top:2px solid var(--color-gold);padding:18px;margin-bottom:8px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-            <div style="color:white;font-size:14px;font-weight:500;">{formatDate(appt.date)}</div>
-            <div style="background:rgba(201,168,76,0.12);color:var(--color-gold);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;padding:3px 8px;">Confirmed</div>
-          </div>
-          {#each appt.services as svc}
-            <div style="color:rgba(255,255,255,0.45);font-size:13px;margin-bottom:10px;">{svc.serviceName} · {svc.startTime}–{svc.endTime} · {svc.employeeName} · ${svc.price}</div>
-          {/each}
-          <button
-            onclick={() => cancel(appt.id)}
-            disabled={cancelling === appt.id}
-            style="background:transparent;border:1px solid #3a3a3a;color:rgba(255,255,255,0.35);font-size:11px;letter-spacing:0.15em;text-transform:uppercase;padding:12px 28px;cursor:pointer;"
-          >
-            {cancelling === appt.id ? 'Cancelling…' : 'Cancel Appointment'}
-          </button>
-        </div>
-      {/each}
-    {/if}
-  {/if}
-
-  <!-- Completed tab -->
-  {#if activeTab === 'completed'}
-    {#if completed.length === 0}
-      <div style="color:rgba(255,255,255,0.25);font-size:13px;">No completed appointments yet.</div>
-    {:else}
-      {#each completed as appt}
-        <div style="background:var(--color-surface);border:1px solid var(--color-border);border-top:2px solid var(--color-gold);padding:18px;margin-bottom:8px;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-            <div style="color:white;font-size:14px;font-weight:500;">{formatDate(appt.date)}</div>
-            <div style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;padding:3px 8px;">Completed</div>
-          </div>
-          {#each appt.services as svc}
-            <div style="color:rgba(255,255,255,0.45);font-size:13px;">{svc.serviceName} · {svc.startTime}–{svc.endTime} · {svc.employeeName} · ${svc.price}</div>
-          {/each}
-        </div>
-      {/each}
-    {/if}
-  {/if}
-
-  <!-- Cancelled tab -->
-  {#if activeTab === 'cancelled'}
-    {#if cancelled.length === 0}
-      <div style="color:rgba(255,255,255,0.25);font-size:13px;">No cancelled appointments.</div>
-    {:else}
-      {#each cancelled as appt}
-        <div style="background:var(--color-surface);border:1px solid var(--color-border);border-top:2px solid var(--color-gold);padding:18px;margin-bottom:8px;opacity:0.55;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
-            <div style="color:white;font-size:14px;font-weight:500;">{formatDate(appt.date)}</div>
-            <div style="background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.35);font-size:10px;letter-spacing:0.15em;text-transform:uppercase;padding:3px 8px;">Cancelled</div>
-          </div>
-          {#each appt.services as svc}
-            <div style="color:rgba(255,255,255,0.45);font-size:13px;">{svc.serviceName} · {svc.startTime}–{svc.endTime} · {svc.employeeName} · ${svc.price}</div>
-          {/each}
-        </div>
-      {/each}
-    {/if}
-  {/if}
-
-  <!-- View All tab -->
   {#if activeTab === 'all'}
-    <!-- Filter row -->
-    <div style="display:flex;gap:8px;margin-bottom:16px;align-items:center;flex-wrap:wrap;">
-      <div style="color:rgba(255,255,255,0.35);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;flex-shrink:0;">Filter:</div>
-      <input
-        type="date"
-        bind:value={filterFrom}
-        style="background:var(--color-surface);border:1px solid var(--color-border);color:rgba(255,255,255,0.5);font-size:12px;padding:5px 8px;flex:1;min-width:100px;"
-        placeholder="From"
-      />
-      <input
-        type="date"
-        bind:value={filterTo}
-        style="background:var(--color-surface);border:1px solid var(--color-border);color:rgba(255,255,255,0.5);font-size:12px;padding:5px 8px;flex:1;min-width:100px;"
-        placeholder="To"
-      />
-      <select
-        bind:value={filterStatus}
-        style="background:var(--color-surface);border:1px solid var(--color-border);color:rgba(255,255,255,0.5);font-size:12px;padding:5px 8px;flex:1;min-width:80px;"
-      >
-        <option value="all">All</option>
-        <option value="new">New</option>
-        <option value="confirmed">Confirmed</option>
-        <option value="completed">Completed</option>
-        <option value="cancelled">Cancelled</option>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <div style="color:rgba(255,255,255,0.35);font-size:12px;letter-spacing:0.1em;text-transform:uppercase;">Filter:</div>
+      <input type="date" bind:value={filterFrom} style="background:var(--color-surface);border:1px solid var(--color-border);color:rgba(255,255,255,0.5);font-size:12px;padding:5px 8px;flex:1;min-width:100px;" />
+      <input type="date" bind:value={filterTo} style="background:var(--color-surface);border:1px solid var(--color-border);color:rgba(255,255,255,0.5);font-size:12px;padding:5px 8px;flex:1;min-width:100px;" />
+      <select bind:value={filterStatus} style="background:var(--color-surface);border:1px solid var(--color-border);color:rgba(255,255,255,0.5);font-size:12px;padding:5px 8px;flex:1;min-width:80px;">
+        <option value="all">All</option><option value="new">New</option><option value="confirmed">Confirmed</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option>
       </select>
-      <button
-        onclick={applyFilters}
-        style="background:var(--color-gold);border:none;color:#000;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;padding:12px 28px;cursor:pointer;flex-shrink:0;"
-      >
-        Apply
-      </button>
+      <button onclick={applyFilters} style="background:var(--color-gold);border:none;color:#000;font-size:11px;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;padding:8px 18px;cursor:pointer;">Apply</button>
     </div>
-
-    {#if allFiltered.length === 0}
-      <div style="color:rgba(255,255,255,0.25);font-size:13px;">No appointments match the current filter.</div>
-    {:else}
-      {#each allFiltered as appt}
-        {@const isConfirmed = appt.status === 'confirmed'}
-        {@const isCancelled = appt.status === 'cancelled'}
-        <div style="background:var(--color-surface);border:1px solid var(--color-border);border-top:2px solid var(--color-gold);padding:18px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;{isCancelled ? 'opacity:0.55;' : ''}">
-          <div>
-            {#each appt.services as svc}
-              <div style="color:white;font-size:13px;font-weight:500;margin-bottom:3px;">{formatDate(appt.date)} · {svc.serviceName} · {svc.employeeName}</div>
-              <div style="color:rgba(255,255,255,0.35);font-size:12px;">{svc.startTime}–{svc.endTime} · ${svc.price}</div>
-            {/each}
-          </div>
-          <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;padding:3px 8px;flex-shrink:0;margin-left:12px;
-            {isConfirmed ? 'background:rgba(201,168,76,0.12);color:var(--color-gold);' : 'background:rgba(255,255,255,0.06);color:rgba(255,255,255,0.35);'}">
-            {appt.status}
-          </div>
-        </div>
-      {/each}
-    {/if}
   {/if}
-</div>
+
+  <DataTable columns={apptColumns} rows={currentRows}>
+    {#snippet row(appt)}
+      <span>{formatDate(appt.date)}</span>
+      <span>{appt.services[0]?.serviceName ?? '—'}</span>
+      <span>{appt.services[0]?.employeeName ?? '—'}</span>
+      <span>{appt.services[0]?.startTime ?? '—'}</span>
+      <span style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;
+        color:{appt.status === 'confirmed' ? 'var(--color-gold)' : appt.status === 'cancelled' ? '#f87171' : appt.status === 'completed' ? '#5db974' : '#93c5fd'};">
+        {appt.status}
+      </span>
+      {#if appt.status === 'confirmed' || appt.status === 'new'}
+        <button onclick={() => cancel(appt.id)} disabled={cancelling === appt.id} style="background:none;border:none;color:var(--color-gold);font-size:11px;cursor:pointer;text-align:left;padding:0;">
+          {cancelling === appt.id ? 'Cancelling…' : 'Cancel'}
+        </button>
+      {:else}
+        <span style="color:rgba(255,255,255,0.3);">—</span>
+      {/if}
+    {/snippet}
+    {#snippet empty()}
+      <span>
+        {#if activeTab === 'upcoming'}No upcoming appointments. <a href="/portal/book" style="color:var(--color-gold);">Book one →</a>
+        {:else if activeTab === 'completed'}No completed appointments yet.
+        {:else if activeTab === 'cancelled'}No cancelled appointments.
+        {:else}No appointments match the current filter.{/if}
+      </span>
+    {/snippet}
+  </DataTable>
+</PageShell>
