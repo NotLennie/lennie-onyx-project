@@ -1,6 +1,15 @@
 <script lang="ts" generics="Row">
   import type { Snippet } from 'svelte';
   type Column = { key: string; label: string; width?: string };
+  /**
+   * Each column declares its grid track via `width` (CSS grid value, default `1fr`).
+   * `key` is a convention for callers (e.g. `row[col.key]`); the component itself
+   * does not consume it.
+   *
+   * IMPORTANT — row snippet contract: `row` must emit exactly one direct-child
+   * element per column, in column order. Wrapping cells in an extra container
+   * (e.g. a single `<div>` around all cells) breaks the grid layout silently.
+   */
   let { columns, rows, title, viewAllHref, row, empty }: {
     columns: Column[];
     rows: Row[];
@@ -16,7 +25,7 @@
   {#if title}
     <div class="table-head">
       <h4>{title}</h4>
-      {#if viewAllHref}<a href={viewAllHref} class="view-all">View All →</a>{/if}
+      {#if viewAllHref}<a href={viewAllHref} class="view-all">View All <span aria-hidden="true">→</span></a>{/if}
     </div>
   {/if}
   <div class="thead" style="grid-template-columns: {gridTemplate};">

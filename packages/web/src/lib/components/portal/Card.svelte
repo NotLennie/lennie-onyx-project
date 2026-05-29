@@ -9,10 +9,10 @@
   const pad = $derived(padding === 'sm' ? '14px' : padding === 'lg' ? '24px' : '18px');
 </script>
 
-<section class="card" class:accent style="padding: {pad};">
+<div class="card" class:accent style="padding: {pad};">
   {#if label}<div class="label">{label}</div>{/if}
   {@render children()}
-</section>
+</div>
 
 <style>
   .card { background: var(--color-surface); border: 1px solid var(--color-border); }

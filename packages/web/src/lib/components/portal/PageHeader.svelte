@@ -20,7 +20,7 @@
     <div class="chip">
       <div class="av">
         {#if user.profilePictureUrl}
-          <img src={user.profilePictureUrl} alt="" />
+          <img src={user.profilePictureUrl} alt="{user.name}" />
         {:else}
           {initial}
         {/if}

@@ -6,7 +6,7 @@
   } = $props();
 </script>
 
-<a class="hero" href={cta.href}>
+<a class="hero" href={cta.href} aria-label={title}>
   <div class="bg" style="background-image: url('{image}');"></div>
   <div class="overlay"></div>
   <div class="content">
@@ -22,4 +22,5 @@
   .content { position: relative; z-index: 2; }
   .title { color: white; font-family: Georgia, serif; font-size: 22px; font-weight: 300; max-width: 340px; line-height: 1.3; margin-bottom: 20px; }
   .btn { display: inline-block; background: var(--color-gold); color: #000; padding: 10px 24px; font-size: 11px; letter-spacing: 0.22em; text-transform: uppercase; font-weight: 700; }
+  .hero:focus-visible { outline: 2px solid var(--color-gold); outline-offset: 2px; }
 </style>
