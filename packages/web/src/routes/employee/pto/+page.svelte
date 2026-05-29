@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import type { PtoType } from '@project/shared';
+  import type { PtoType, PtoRequest } from '@project/shared';
   import { api } from '$lib/api';
   import { invalidateAll } from '$app/navigation';
   import PageShell from '$lib/components/portal/PageShell.svelte';
@@ -33,18 +33,19 @@
   let appliedTo = $state('');
   let appliedType = $state('all');
 
-  const ownPto = $derived(data.pto.filter((p) => p.employeeId === userId));
+  const pto = $derived(data.pto as PtoRequest[]);
+  const ownPto = $derived(pto.filter((p: PtoRequest) => p.employeeId === userId));
   const allPendingForReview = $derived(
-    data.pto.filter((p) => p.status === 'pending').sort((a, b) => a.date.localeCompare(b.date))
+    pto.filter((p: PtoRequest) => p.status === 'pending').sort((a: PtoRequest, b: PtoRequest) => a.date.localeCompare(b.date))
   );
-  const ownPending = $derived(ownPto.filter((p) => p.status === 'pending').sort((a, b) => a.date.localeCompare(b.date)));
-  const ownUpcoming = $derived(ownPto.filter((p) => p.status === 'approved' && p.date >= today).sort((a, b) => a.date.localeCompare(b.date)));
-  const ownPast = $derived.by(() => {
-    let list = ownPto.filter((p) => p.date < today || (p.status !== 'pending' && p.status !== 'approved'));
-    if (appliedFrom) list = list.filter((p) => p.date >= appliedFrom);
-    if (appliedTo) list = list.filter((p) => p.date <= appliedTo);
-    if (appliedType !== 'all') list = list.filter((p) => p.type === appliedType);
-    return list.sort((a, b) => b.date.localeCompare(a.date));
+  const ownPending = $derived(ownPto.filter((p: PtoRequest) => p.status === 'pending').sort((a: PtoRequest, b: PtoRequest) => a.date.localeCompare(b.date)));
+  const ownUpcoming = $derived(ownPto.filter((p: PtoRequest) => p.status === 'approved' && p.date >= today).sort((a: PtoRequest, b: PtoRequest) => a.date.localeCompare(b.date)));
+  const ownPast = $derived.by((): PtoRequest[] => {
+    let list: PtoRequest[] = ownPto.filter((p: PtoRequest) => p.date < today || (p.status !== 'pending' && p.status !== 'approved'));
+    if (appliedFrom) list = list.filter((p: PtoRequest) => p.date >= appliedFrom);
+    if (appliedTo) list = list.filter((p: PtoRequest) => p.date <= appliedTo);
+    if (appliedType !== 'all') list = list.filter((p: PtoRequest) => p.type === appliedType);
+    return list.sort((a: PtoRequest, b: PtoRequest) => b.date.localeCompare(a.date));
   });
 
   function labelType(type: string) {
