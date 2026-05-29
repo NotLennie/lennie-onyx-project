@@ -3,6 +3,10 @@
   import type { PtoType } from '@project/shared';
   import { api } from '$lib/api';
   import { invalidateAll } from '$app/navigation';
+  import PageShell from '$lib/components/portal/PageShell.svelte';
+  import PageHeader from '$lib/components/portal/PageHeader.svelte';
+  import Card from '$lib/components/portal/Card.svelte';
+  import DataTable from '$lib/components/portal/DataTable.svelte';
 
   let { data } = $props<{ data: PageData }>();
 
@@ -116,46 +120,59 @@
       { id: 'past' as const, label: 'Past' },
     ];
   });
+
+  const requestColumns = [
+    { key: 'date', label: 'Date', width: '1.2fr' },
+    { key: 'type', label: 'Type', width: '1.2fr' },
+    { key: 'note', label: 'Note', width: '1.5fr' },
+    { key: 'status', label: 'Status', width: '1fr' },
+    { key: 'action', label: 'Action', width: '0.9fr' },
+  ];
+
+  const reviewColumns = [
+    { key: 'date', label: 'Date', width: '1fr' },
+    { key: 'employee', label: 'Employee', width: '1.2fr' },
+    { key: 'type', label: 'Type', width: '1.1fr' },
+    { key: 'note', label: 'Note', width: '1.3fr' },
+    { key: 'status', label: 'Status', width: '1.1fr' },
+  ];
 </script>
 
-<div>
-  <div style="color:rgba(255,255,255,0.4);font-size:8px;letter-spacing:0.25em;text-transform:uppercase;margin-bottom:4px;">Employee Portal</div>
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-    <div style="color:white;font-size:20px;font-family:Georgia,serif;font-weight:300;letter-spacing:0.05em;">MY PTO</div>
-    <button onclick={() => showCreate = !showCreate} style="background:#C9A84C;border:none;color:#000;font-size:8px;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;padding:7px 14px;cursor:pointer;">
-      {showCreate ? '✕ Cancel' : '+ Request PTO'}
-    </button>
-  </div>
+<PageShell bgImage="/images/portal_background.png">
+  <PageHeader eyebrow="Staff Portal" title="MY PTO" user={data.user} />
 
-  {#if submitError}
-    <div style="margin-bottom:12px;padding:10px 14px;font-size:10px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{submitError}</div>
-  {/if}
-
-  {#if showCreate}
-    <div style="background:#242424;border:1px solid #333;border-top:2px solid #C9A84C;padding:16px;margin-bottom:16px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+    <Card label="Request PTO">
+      {#if submitError}
+        <div role="alert" style="margin-bottom:12px;padding:10px 14px;font-size:13px;color:#f87171;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.08);">{submitError}</div>
+      {/if}
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
         <div>
-          <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.1em;margin-bottom:4px;">DATE</div>
+          <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.1em;margin-bottom:4px;text-transform:uppercase;">Date</div>
           <input type="date" bind:value={newDate} style="background:transparent;border:1px solid #333;color:white;font-size:10px;padding:7px 10px;" />
         </div>
         <div>
-          <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.1em;margin-bottom:4px;">TYPE</div>
+          <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.1em;margin-bottom:4px;text-transform:uppercase;">Type</div>
           <select bind:value={newType} style="background:#1a1a1a;border:1px solid #333;color:white;font-size:10px;padding:7px 10px;">
             {#each ptoTypes as t}<option value={t}>{labelType(t)}</option>{/each}
           </select>
         </div>
         <div style="flex:1;min-width:140px;">
-          <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.1em;margin-bottom:4px;">NOTE (OPTIONAL)</div>
+          <div style="color:rgba(255,255,255,0.3);font-size:8px;letter-spacing:0.1em;margin-bottom:4px;text-transform:uppercase;">Note (Optional)</div>
           <input type="text" bind:value={newNote} placeholder="Add a note…" style="width:100%;background:transparent;border:1px solid #333;color:white;font-size:10px;padding:7px 10px;box-sizing:border-box;" />
         </div>
-        <button onclick={createPto} disabled={submitting} style="background:#C9A84C;border:none;color:#000;font-size:8px;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;padding:7px 14px;cursor:pointer;">
+        <button onclick={createPto} disabled={submitting} style="background:var(--color-gold);border:none;color:#000;font-size:8px;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;padding:7px 14px;cursor:pointer;">
           {submitting ? 'Submitting…' : 'Submit Request'}
         </button>
       </div>
-    </div>
-  {/if}
+    </Card>
+    <Card accent label="PTO Balance">
+      <div style="color:rgba(255,255,255,0.3);font-size:13px;padding:20px 0;">Balance tracking coming soon.</div>
+    </Card>
+  </div>
 
-  <div style="display:flex;border-bottom:1px solid #333;margin-bottom:16px;">
+  <!-- Tab bar -->
+  <div style="display:flex;border-bottom:1px solid #333;">
     {#each tabs as tab}
       <button
         onclick={() => activeTab = tab.id}
@@ -166,17 +183,13 @@
   </div>
 
   {#if activeTab === 'review' && isAdmin}
-    {#if allPendingForReview.length === 0}
-      <div style="color:rgba(255,255,255,0.25);font-size:10px;">No pending PTO requests to review.</div>
-    {:else}
-      {#each allPendingForReview as req}
-        <div style="background:#242424;border:1px solid #333;border-left:2px solid #C9A84C;padding:12px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <div style="color:white;font-size:10px;font-weight:500;">{formatDate(req.date)}</div>
-            <div style="color:rgba(255,255,255,0.35);font-size:9px;margin-top:2px;">
-              {req.employeeName ?? 'Employee'}{req.employeeId === userId ? ' (you)' : ''} · {labelType(req.type)}{req.note ? ` · ${req.note}` : ''}
-            </div>
-          </div>
+    <DataTable title="Pending Review" columns={reviewColumns} rows={allPendingForReview}>
+      {#snippet row(req)}
+        <span>{formatDate(req.date)}</span>
+        <span>{req.employeeName ?? 'Employee'}{req.employeeId === userId ? ' (you)' : ''}</span>
+        <span>{labelType(req.type)}</span>
+        <span style="color:rgba(255,255,255,0.5);">{req.note ?? '—'}</span>
+        <span>
           <select
             value={req.status}
             onchange={(e) => updatePtoStatus(req.id, (e.target as HTMLSelectElement).value as any)}
@@ -187,73 +200,63 @@
             <option value="approved" style="color:#22c55e">Approved</option>
             <option value="declined" style="color:#ef4444">Declined</option>
           </select>
-        </div>
-      {/each}
-    {/if}
+        </span>
+      {/snippet}
+      {#snippet empty()}<span>No pending PTO requests to review.</span>{/snippet}
+    </DataTable>
   {/if}
 
   {#if activeTab === 'pending'}
-    {#if ownPending.length === 0}
-      <div style="color:rgba(255,255,255,0.25);font-size:10px;">No pending requests.</div>
-    {:else}
-      {#each ownPending as req}
-        <div style="background:#242424;border:1px solid #333;border-left:2px solid #C9A84C;padding:12px 14px;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <span style="color:white;font-size:10px;font-weight:500;">{formatDate(req.date)}</span>
-              <span style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;color:#C9A84C;background:rgba(201,168,76,0.15);">Pending</span>
-            </div>
-            <div style="color:rgba(255,255,255,0.35);font-size:9px;margin-top:2px;">{labelType(req.type)}{req.note ? ` · ${req.note}` : ''}</div>
-          </div>
+    <DataTable title="My Pending Requests" columns={requestColumns} rows={ownPending}>
+      {#snippet row(req)}
+        <span>{formatDate(req.date)}</span>
+        <span>{labelType(req.type)}</span>
+        <span style="color:rgba(255,255,255,0.5);">{req.note ?? '—'}</span>
+        <span style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#C9A84C;">Pending</span>
+        <span>
           <button
             onclick={() => withdrawPto(req.id)}
             disabled={deleting === req.id}
             style="background:transparent;border:1px solid rgba(239,68,68,0.3);color:#ef4444;font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:5px 10px;cursor:pointer;"
           >{deleting === req.id ? '…' : 'Withdraw'}</button>
-        </div>
-      {/each}
-    {/if}
+        </span>
+      {/snippet}
+      {#snippet empty()}<span>No pending requests.</span>{/snippet}
+    </DataTable>
   {/if}
 
   {#if activeTab === 'upcoming'}
-    {#if ownUpcoming.length === 0}
-      <div style="color:rgba(255,255,255,0.25);font-size:10px;">No upcoming approved PTO.</div>
-    {:else}
-      {#each ownUpcoming as req}
-        <div style="background:#242424;border:1px solid #333;border-left:2px solid #C9A84C;padding:12px 14px;margin-bottom:6px;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="color:white;font-size:10px;font-weight:500;">{formatDate(req.date)}</span>
-            <span style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;color:#22c55e;background:rgba(34,197,94,0.15);">Approved</span>
-          </div>
-          <div style="color:rgba(255,255,255,0.35);font-size:9px;margin-top:2px;">{labelType(req.type)}{req.note ? ` · ${req.note}` : ''}</div>
-        </div>
-      {/each}
-    {/if}
+    <DataTable title="Upcoming Approved PTO" columns={requestColumns} rows={ownUpcoming}>
+      {#snippet row(req)}
+        <span>{formatDate(req.date)}</span>
+        <span>{labelType(req.type)}</span>
+        <span style="color:rgba(255,255,255,0.5);">{req.note ?? '—'}</span>
+        <span style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:#22c55e;">Approved</span>
+        <span style="color:rgba(255,255,255,0.3);">—</span>
+      {/snippet}
+      {#snippet empty()}<span>No upcoming approved PTO.</span>{/snippet}
+    </DataTable>
   {/if}
 
   {#if activeTab === 'past'}
-    <div style="display:flex;gap:8px;margin-bottom:12px;align-items:center;flex-wrap:wrap;">
+    <div style="display:flex;gap:8px;margin-bottom:4px;align-items:center;flex-wrap:wrap;">
       <input type="date" bind:value={filterFrom} style="background:#242424;border:1px solid #333;color:rgba(255,255,255,0.5);font-size:9px;padding:5px 8px;" />
       <input type="date" bind:value={filterTo} style="background:#242424;border:1px solid #333;color:rgba(255,255,255,0.5);font-size:9px;padding:5px 8px;" />
       <select bind:value={filterType} style="background:#242424;border:1px solid #333;color:rgba(255,255,255,0.5);font-size:9px;padding:5px 8px;">
         <option value="all">All Types</option>
         {#each ptoTypes as t}<option value={t}>{labelType(t)}</option>{/each}
       </select>
-      <button onclick={applyFilters} style="background:#C9A84C;border:none;color:#000;font-size:8px;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;padding:5px 12px;cursor:pointer;">Apply</button>
+      <button onclick={applyFilters} style="background:var(--color-gold);border:none;color:#000;font-size:8px;letter-spacing:0.15em;text-transform:uppercase;font-weight:600;padding:5px 12px;cursor:pointer;">Apply</button>
     </div>
-
-    {#if ownPast.length === 0}
-      <div style="color:rgba(255,255,255,0.25);font-size:10px;">No past PTO records.</div>
-    {:else}
-      {#each ownPast as req}
-        <div style="background:#242424;border:1px solid #333;border-left:2px solid #C9A84C;padding:12px 14px;margin-bottom:6px;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <span style="color:white;font-size:10px;font-weight:500;">{formatDate(req.date)}</span>
-            <span style="font-size:8px;letter-spacing:0.1em;text-transform:uppercase;padding:2px 6px;color:{statusColor(req.status)};background:{statusColor(req.status)}15;">{req.status}</span>
-          </div>
-          <div style="color:rgba(255,255,255,0.35);font-size:9px;margin-top:2px;">{labelType(req.type)}{req.note ? ` · ${req.note}` : ''}</div>
-        </div>
-      {/each}
-    {/if}
+    <DataTable title="Past PTO" columns={requestColumns} rows={ownPast}>
+      {#snippet row(req)}
+        <span>{formatDate(req.date)}</span>
+        <span>{labelType(req.type)}</span>
+        <span style="color:rgba(255,255,255,0.5);">{req.note ?? '—'}</span>
+        <span style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:{statusColor(req.status)};">{req.status}</span>
+        <span style="color:rgba(255,255,255,0.3);">—</span>
+      {/snippet}
+      {#snippet empty()}<span>No past PTO records.</span>{/snippet}
+    </DataTable>
   {/if}
-</div>
+</PageShell>
