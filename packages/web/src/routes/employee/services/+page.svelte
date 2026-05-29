@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PageData } from './$types';
-  import type { ServiceType, Service } from '@project/shared';
+  import type { ServiceType, Service, Role } from '@project/shared';
   import { api } from '$lib/api';
   import { invalidateAll } from '$app/navigation';
   import PageShell from '$lib/components/portal/PageShell.svelte';
@@ -105,11 +105,13 @@
   }
 
   const columns = [
-    { key: 'name', label: 'Name', width: '1.5fr' },
-    { key: 'duration', label: 'Duration', width: '1fr' },
-    { key: 'price', label: 'Price', width: '1fr' },
-    { key: 'active', label: 'Active', width: '0.8fr' },
-    { key: 'action', label: 'Action', width: '0.8fr' },
+    { key: 'name', label: 'Name', width: '1.3fr' },
+    { key: 'type', label: 'Type', width: '1fr' },
+    { key: 'duration', label: 'Duration', width: '0.8fr' },
+    { key: 'price', label: 'Price', width: '0.8fr' },
+    { key: 'roles', label: 'Roles', width: '1.2fr' },
+    { key: 'active', label: 'Active', width: '0.7fr' },
+    { key: 'action', label: 'Action', width: '0.6fr' },
   ];
 </script>
 
@@ -172,6 +174,15 @@
         {/if}
       </span>
       <span>
+        {#if editingCell !== null && editingCell.id === svc.id && editingCell.field === 'type'}
+          <select bind:value={editValue} onblur={() => saveEdit(svc.id, 'type')} onchange={() => saveEdit(svc.id, 'type')} autofocus style="background:#1a1a1a;border:1px solid #C9A84C;color:white;font-size:9px;padding:3px 6px;">
+            {#each serviceTypes as t}<option value={t}>{labelType(t)}</option>{/each}
+          </select>
+        {:else}
+          <span onclick={() => startEdit(svc.id, 'type', svc.type)} style="color:rgba(255,255,255,0.5);{isAdmin ? 'cursor:pointer;' : ''}">{labelType(svc.type)}</span>
+        {/if}
+      </span>
+      <span>
         {#if editingCell !== null && editingCell.id === svc.id && editingCell.field === 'durationMinutes'}
           <input type="number" bind:value={editValue} onblur={() => saveEdit(svc.id, 'durationMinutes')} onkeydown={(e) => handleKeydown(e, svc.id, 'durationMinutes')} autofocus style="background:transparent;border:1px solid #C9A84C;color:white;font-size:10px;padding:4px 6px;width:60px;" />
         {:else}
@@ -184,6 +195,11 @@
         {:else}
           <span onclick={() => startEdit(svc.id, 'price', svc.price)} style="{isAdmin ? 'cursor:pointer;' : ''}">${svc.price}</span>
         {/if}
+      </span>
+      <span style="display:flex;flex-wrap:wrap;gap:3px;">
+        {#each (data.roles.filter((r: Role) => svc.roleIds.includes(r.id))) as role}
+          <span style="font-size:8px;padding:1px 5px;border:1px solid #333;color:rgba(255,255,255,0.5);">{role.name}</span>
+        {/each}
       </span>
       <span style="font-size:9px;letter-spacing:0.15em;text-transform:uppercase;color:{svc.isActive ? '#5db974' : 'rgba(255,255,255,0.4)'};">
         {svc.isActive ? '● Active' : '○ Inactive'}

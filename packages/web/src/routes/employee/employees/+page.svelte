@@ -201,7 +201,7 @@
           <span onclick={() => startEdit(emp.id, 'email', emp.email)} style="color:rgba(255,255,255,0.5);{isAdmin ? 'cursor:pointer;' : ''}">{emp.email}</span>
         {/if}
       </span>
-      <span>
+      <span style="display:flex;flex-wrap:wrap;gap:3px;">
         {#each emp.roles as role}
           <span style="font-size:8px;padding:1px 5px;border:1px solid #333;color:rgba(255,255,255,0.5);margin-right:2px;">{role.name}</span>
         {/each}
