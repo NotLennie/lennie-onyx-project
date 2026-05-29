@@ -10,8 +10,6 @@
     { href: '/portal/appointments', label: 'My Appointments' },
     { href: '/portal/profile', label: 'Profile' },
   ];
-
-  const firstName = $derived(data.user.name.split(' ')[0]);
 </script>
 
 <div style="min-height:100vh;display:flex;background:var(--color-bg);">
@@ -19,16 +17,6 @@
     <div style="padding:24px 20px 18px;border-bottom:1px solid var(--color-border);">
       <div style="color:var(--color-gold);font-size:18px;letter-spacing:0.3em;font-weight:600;font-family:Georgia,serif;">ONYX</div>
       <div style="color:rgba(255,255,255,0.3);font-size:10px;letter-spacing:0.2em;text-transform:uppercase;margin-top:2px;">Hair Salon</div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:16px;">
-        <div style="width:32px;height:32px;flex-shrink:0;overflow:hidden;display:flex;align-items:center;justify-content:center;background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.3);">
-          {#if data.user.profilePictureUrl}
-            <img src={data.user.profilePictureUrl} alt="User avatar" style="width:100%;height:100%;object-fit:cover;" />
-          {:else}
-            <img src="/icons/expert_stylist.png" alt="Default avatar" style="width:20px;height:20px;opacity:0.85;" />
-          {/if}
-        </div>
-        <span style="color:rgba(255,255,255,0.7);font-size:13px;">{firstName}</span>
-      </div>
     </div>
 
     <nav class="portal-nav" style="padding:14px 10px;flex:1;">
@@ -55,7 +43,7 @@
     </div>
   </aside>
 
-  <main style="flex:1;overflow:auto;padding:40px;">
+  <main style="flex:1;overflow:auto;">
     {@render children()}
   </main>
 </div>
